@@ -1,3 +1,6 @@
+# Local reference guides (case-insensitive match, including future guides)
+*[gG][uU][iI][dD][eE]*.[mM][dD]
+
 # Project-local Python and dependency caches
 .venv/
 venv/

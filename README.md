@@ -51,7 +51,7 @@ No personal reference recording has been supplied yet. Generic speech tests will
 
 ## Local data and version control
 
-Recordings, voice profiles, generated audio, model files, logs, caches, and Python environments are excluded from Git by default. They remain ordinary local files; Git will not back them up. Back up personal data separately.
+Recordings, voice profiles, generated audio, model files, logs, caches, Python environments, and Markdown guides are excluded from Git by default. Guide filenames must contain `guide` (case-insensitive) to match the ignore rule. These files remain local; Git will not back them up. Back up personal data and reference guides separately.
 
 This repository is local. No remote repository or hosting service has been configured.
 
