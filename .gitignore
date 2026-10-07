@@ -1,0 +1,41 @@
+# Project-local Python and dependency caches
+.venv/
+venv/
+.python/
+.cache/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Downloaded model weights and personal application data
+models/
+data/
+*.wav
+*.mp3
+*.flac
+*.m4a
+*.ogg
+*.aac
+*.wma
+*.safetensors
+*.pt
+*.pth
+*.ckpt
+
+# Local secrets and diagnostic output
+.env
+.env.*
+!.env.example
+*.log
+
+# Build artifacts and operating-system files
+build/
+dist/
+Thumbs.db
+Desktop.ini
+.DS_Store
