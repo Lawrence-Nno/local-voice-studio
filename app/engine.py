@@ -10,6 +10,8 @@ REQUIRED = ("ve.safetensors", "t3_turbo_v1.safetensors", "s3gen_meanflow.safeten
 
 
 class SpeechEngine:
+    model_id = "Chatterbox Turbo"
+
     def __init__(self, model_directory: Path = MODEL):
         self.directory = model_directory
         self.model = None

@@ -74,7 +74,8 @@ class ProcessingTests(unittest.TestCase):
             second = run_job(engine, "Hello.", None, None, "CPU", Event(), lambda *_: None, data, options)
             self.assertEqual(first.read_bytes(), second.read_bytes())
             self.assertEqual(engine.parameters["temperature"], .65)
-            self.assertEqual(read_json(data / "jobs" / second.stem / "job.json")["generation_options"], options)
+            self.assertEqual(read_json(data / "jobs" / second.stem / "job.json")["generation_options"],
+                             {**options, "temperature": .65, "repetition_penalty": 1.2})
 
 
 if __name__ == "__main__":

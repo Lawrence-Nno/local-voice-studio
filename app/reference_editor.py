@@ -14,7 +14,7 @@ from .storage import DATA
 class ReferenceEditor(tk.Toplevel):
     def __init__(self, parent, source):
         super().__init__(parent)
-        self.title("Prepare reference recording")
+        self.title("Clean voice reference ? Before generation")
         self.result = None
         self.source = source
         if source.stat().st_size > 100 * 1024 * 1024:
@@ -34,15 +34,16 @@ class ReferenceEditor(tk.Toplevel):
         frame = ttk.Frame(self, padding=20)
         frame.pack(fill="both", expand=True)
         ttk.Label(frame, text=f"{source.name} · {info.duration:.2f} seconds").pack(anchor="w")
-        ttk.Label(frame, text="The original recording is preserved. Cleanup is optional.").pack(anchor="w", pady=8)
+        ttk.Label(frame, text="These settings prepare your recording for future voice cloning.
+Your original is preserved. Generated speech is polished separately.").pack(anchor="w", pady=8)
         times = ttk.Frame(frame)
         times.pack(fill="x", pady=8)
         for label, variable in (("Start (seconds)", self.start), ("End (seconds)", self.end)):
             ttk.Label(times, text=label).pack(side="left", padx=4)
             ttk.Entry(times, textvariable=variable, width=10).pack(side="left", padx=4)
         ttk.Checkbutton(frame, text="Trim quiet beginning and ending", variable=self.trim).pack(anchor="w")
-        ttk.Checkbutton(frame, text="Normalize volume safely", variable=self.normal).pack(anchor="w")
-        ttk.Checkbutton(frame, text="Gentle stationary noise reduction (may affect voice detail)", variable=self.denoise).pack(anchor="w")
+        ttk.Checkbutton(frame, text="Balance recording volume (safe normalization)", variable=self.normal).pack(anchor="w")
+        ttk.Checkbutton(frame, text="Reduce steady background noise (may soften voice detail)", variable=self.denoise).pack(anchor="w")
         self.description = tk.StringVar(value="Preview the cleaned version before saving; keep more than 5 seconds.")
         ttk.Label(frame, textvariable=self.description, wraplength=580).pack(anchor="w", pady=12)
         buttons = ttk.Frame(frame)
@@ -50,7 +51,10 @@ class ReferenceEditor(tk.Toplevel):
         ttk.Button(buttons, text="Play original", command=self.play_original).pack(side="left", padx=3)
         ttk.Button(buttons, text="Preview cleanup", command=self.preview).pack(side="left", padx=3)
         ttk.Button(buttons, text="Stop", command=lambda: winsound.PlaySound(None, 0)).pack(side="left", padx=3)
-        ttk.Button(buttons, text="Use reference", command=self.accept).pack(side="left", padx=3)
+        save = ttk.Frame(frame)
+        save.pack(fill="x", pady=(12, 0))
+        ttk.Button(save, text="Save voice reference", style="Primary.TButton", command=self.accept).pack(side="right")
+        ttk.Button(save, text="Cancel", command=self.close).pack(side="right", padx=8)
         self.preview_path = DATA / "previews" / (uuid.uuid4().hex + ".wav")
         self.protocol("WM_DELETE_WINDOW", self.close)
         self.transient(parent)

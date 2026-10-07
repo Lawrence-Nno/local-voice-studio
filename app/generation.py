@@ -15,6 +15,9 @@ from .storage import DATA, atomic_json, read_json
 GENERATION_PRESETS = {"Default": (.8, 1.2), "Steady": (.65, 1.2), "Expressive": (.9, 1.2)}
 
 
+QWEN_PRESETS = {"Default": (.9, 1.05), "Steady": (.65, 1.05), "Expressive": (1.0, 1.05)}
+
+
 class Cancelled(Exception):
     pass
 
@@ -48,6 +51,7 @@ def run_job(engine, text: str, profile: dict | None, reference: Path | None,
     seed = options.get("seed")
     if seed is not None and (not isinstance(seed, int) or not 0 <= seed <= 2**32 - 1):
         raise ValueError("Seed must be a whole number from 0 to 4294967295, or blank.")
+    presets = QWEN_PRESETS if getattr(engine, "model_id", "").startswith("Qwen") else GENERATION_PRESETS
     chunks = chunk_text(text)
     job_id = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:8]
     directory = data / "jobs" / job_id
@@ -57,8 +61,10 @@ def run_job(engine, text: str, profile: dict | None, reference: Path | None,
     metadata = {"id": job_id, "state": "loading", "created": datetime.now(timezone.utc).isoformat(),
                 "profile_id": profile["id"] if profile else None,
                 "profile_version": profile["version"] if profile else None,
-                "generic_test": profile is None, "sections": len(chunks), "completed": 0,
-                "generation_options": {"preset": preset, "seed": seed}}
+                "generic_test": profile is None, "model": getattr(engine, "model_id", "Chatterbox Turbo"),
+                "reference_mode": "audio + transcript" if getattr(engine, "transcript", "") else "audio only", "sections": len(chunks), "completed": 0,
+                "generation_options": {"preset": preset, "seed": seed, "temperature": presets[preset][0],
+                                       "repetition_penalty": presets[preset][1]}}
     atomic_json(directory / "job.json", metadata)
     temporary = outputs / (job_id + ".partial.wav")
     started = time.perf_counter()
@@ -71,6 +77,8 @@ def run_job(engine, text: str, profile: dict | None, reference: Path | None,
         if seed is not None:
             import random
             import torch
+            if hasattr(engine, "set_seed"):
+                engine.set_seed(seed)
             random.seed(seed)
             np.random.seed(seed)
             torch.manual_seed(seed)
@@ -82,7 +90,7 @@ def run_job(engine, text: str, profile: dict | None, reference: Path | None,
                 raise Cancelled()
             progress(f"Generating section {index} of {len(chunks)} on {engine.device}", index - 1, len(chunks))
             if options:
-                temperature, repetition = GENERATION_PRESETS[preset]
+                temperature, repetition = presets[preset]
                 audio, section_rate = engine.generate(chunk, temperature=temperature, repetition_penalty=repetition)
             else:
                 audio, section_rate = engine.generate(chunk)
@@ -119,7 +127,8 @@ def run_job(engine, text: str, profile: dict | None, reference: Path | None,
         manifest = read_json(engine.directory / "manifest.json") if hasattr(engine, "directory") else {}
         metadata.update(state="complete", output=result.name, sample_rate=rate,
                         duration_seconds=frames / rate, elapsed_seconds=time.perf_counter() - started,
-                        device=engine.device, model_revision=manifest.get("revision"))
+                        device=engine.device, model_revision=manifest.get("revision"),
+                        engine_metrics=getattr(engine, "metrics", {}))
         atomic_json(directory / "job.json", metadata)
         return result
     except Cancelled:

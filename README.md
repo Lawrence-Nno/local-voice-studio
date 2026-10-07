@@ -65,15 +65,15 @@ One job runs at a time, with a maximum of 20,000 characters. Text is generated i
 
 ## Reference cleanup and generated voice refinement
 
-When adding or replacing a recording, **Prepare reference recording** lets you set start/end times, trim quiet edges, normalize volume, and optionally apply gentle stationary-noise reduction. Click **Play original** and **Preview cleanup** to compare, then **Use reference** to save. The processed reference must remain longer than five seconds. Noise reduction is off by default because it can alter voice detail. Turning all processing options off uses the selected segment without normalization, apart from peak protection.
+When adding or replacing a recording, **Prepare reference recording** lets you set start/end times, trim quiet edges, normalize volume, and optionally apply gentle stationary-noise reduction. Click **Play original** and **Preview cleanup** to compare, then **Save voice reference** to save. The processed reference must remain longer than five seconds. Noise reduction is off by default because it can alter voice detail. Turning all processing options off uses the selected segment without normalization, apart from peak protection.
 
-**Clean saved reference** opens the selected profile's preserved original recording. Saving creates a new version; the source recording and previous references are retained. Existing profiles remain compatible without migration.
+**Clean selected voice reference?** opens the selected profile's preserved original recording. Saving creates a new version; the source recording and previous references are retained. Existing profiles remain compatible without migration.
 
 Generation now offers **Default**, **Steady**, and **Expressive** delivery presets. These change Turbo's sampling temperature (0.8, 0.65, and 0.9 respectively), with repetition penalty 1.2. They are sampling choices, not guaranteed emotion or pronunciation controls. An optional integer **Seed** between 0 and 4294967295 supports repeatable comparisons with identical text, reference, settings, hardware, and runtime; GPU results are not guaranteed bit-for-bit deterministic. Blank uses normal random sampling. Preset and seed are recorded with each job.
 
 **Output polish** offers **Original**, **Natural polish**, and **Brighter speech**, with adjustable strength. Natural polish applies a gentle low-frequency filter, mild compression, volume normalization, and peak protection. Brighter speech also adds modest presence emphasis. The initial selection is Natural polish at half strength. Processing runs after generation and always preserves the original completed WAV; no new model or download is required.
 
-Use the **Original/Polished** selector beside playback to compare or export either version. **Apply polish** reapplies the current settings to the original output, never to an already polished copy. Polished WAVs use the `-polished.wav` suffix, with a JSON sidecar recording mode and strength. Selecting Original bypasses polishing. A processing failure leaves the completed original available.
+Use the **Original/Polished** selector beside playback to compare or export either version. **Reapply polish to latest audio** reapplies the current settings to the original output, never to an already polished copy. Polished WAVs use the `-polished.wav` suffix, with a JSON sidecar recording mode and strength. Selecting Original bypasses polishing. A processing failure leaves the completed original available.
 
 These features refine the signal and allow delivery experiments. They do not retrain the voice model, reliably change accent, repair every pronunciation error, or establish better resemblance. Listen to the original and processed versions to choose what works for your voice.
 
@@ -137,3 +137,25 @@ These are initial functional measurements, not a speed guarantee or a personal v
 See [IMPLEMENTATION_GUIDE.md](IMPLEMENTATION_GUIDE.md) for the architecture, profile storage, generation workflow, offline requirements, installation plan, milestones, and acceptance criteria.
 
 The guide is intentionally excluded from future Git commits and may be absent in a new checkout.
+
+## Desktop interface
+
+The numbered cards separate recording preparation (before generation), text and delivery settings, and audio polish (after generation). Mode explanations, a polish-strength percentage, and a live character count clarify the active settings. **Generate my voice** uses the selected reference; **Test built-in voice** uses the model's generic voice. **Play selected** and **Export selected WAV?** use the Original/Polished selection.
+
+## Choosing a speech model
+
+**Speech model** selects **Chatterbox Turbo** or **Qwen3-TTS 1.7B Base**. The selection is remembered on restart. Turbo is the fast English backend with a built-in test voice. Qwen Base needs a saved voice reference, so its built-in-test button is disabled. Both use the same generation, playback, export, and output-polish workflow. Switching unloads the previous model before loading the new one.
+
+Qwen uses a separate `.venv-qwen` environment and `models/qwen3-tts-1.7b` snapshot, leaving Turbo's dependencies intact. For a fresh installation, run `setup.ps1`, then `setup-qwen.ps1` while online. Qwen dependencies are pinned in `requirements-qwen-lock.txt`; its model revision is pinned in `qwen-model-spec.json`. Inference uses only local files. Qwen uses PyTorch SDPA attention on Windows rather than requiring FlashAttention.
+
+With Qwen selected, **Reference transcript...** lets you enter the exact words spoken in the selected prepared recording. A nonempty transcript enables its audio-and-transcript cloning mode; blank uses speaker-embedding-only cloning. A transcript is tied to the reference version and must be supplied again after changing the reference. No automatic transcription or upload is performed. The app currently generates English with both models. Larger model size does not establish better personal resemblance; compare unpolished samples using identical text and recordings.
+
+Qwen's model and code are Apache-2.0 licensed. See the [official Qwen repository](https://github.com/QwenLM/Qwen3-TTS) and [1.7B Base model card](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base).
+
+Qwen delivery presets use temperature 0.9 (Default), 0.65 (Steady), or 1.0 (Expressive), with repetition penalty 1.05. These are sampling controls rather than guaranteed emotional styles. Actual sampling values are saved with each job.
+
+### Local Qwen verification
+
+On the RTX 3060 Laptop GPU (6 GB), Qwen 1.7B successfully generated a 24 kHz WAV using an existing voice reference in audio-only mode. A six-second sample took 36.7 seconds including loading and 22.3 seconds with the model already loaded. Peak PyTorch CUDA reserved memory was 4.26 GiB; other GPU allocations are additional. Turbo generated the same text/reference in 3.0 seconds when loaded, producing 4.52 seconds of audio. These are short local measurements, not general benchmarks. Subjective resemblance and clarity require listening.
+
+Unpolished comparison samples are saved locally at `data/outputs/model-comparison/qwen-1.7b.wav` and `data/outputs/model-comparison/chatterbox-turbo.wav`. Detailed measurement records are in `data/qwen-comparison.json` and `data/turbo-comparison.json`. These personal files remain excluded from Git. CPU inference and audio-and-transcript Qwen quality have not been verified. Thirteen automated tests, native layout/control checks, UI routing and release in both switch directions, playback/export checks, and real GPU generation with both models passed.
