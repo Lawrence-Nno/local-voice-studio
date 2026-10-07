@@ -1,0 +1,6 @@
+{
+  "repo_id": "ResembleAI/chatterbox-turbo",
+  "revision": "749d1c1a46eb10492095d68fbcf55691ccf137cd",
+  "license": "MIT",
+  "backend_package": "chatterbox-tts==0.1.7"
+}
