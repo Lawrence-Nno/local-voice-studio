@@ -47,7 +47,7 @@ class Profiles:
             raise ValueError("Reference recording is missing. Replace this recording or restore a backup.")
         return path
 
-    def import_wav(self, source: Path, name: str, replace: dict | None = None) -> tuple[dict, list[str]]:
+    def import_wav(self, source: Path, name: str, replace: dict | None = None, cleanup: dict | None = None) -> tuple[dict, list[str]]:
         name = name.strip()
         if not name or len(name) > 80:
             raise ValueError("Enter a voice name between 1 and 80 characters.")
@@ -76,7 +76,11 @@ class Profiles:
             raise ValueError("Recording is silent or too quiet. Record clear speech at a higher level.")
         if info.duration > 15:
             warnings.append("The model uses the opening portions of your recording. Put clear speech at the start.")
-        mono *= min(0.95 / peak, 4.0)
+        if cleanup is None:
+            mono *= min(0.95 / peak, 4.0)
+        else:
+            from .audio_processing import clean_reference
+            mono = clean_reference(mono, rate, **cleanup)
         identifier = replace["id"] if replace else str(uuid.uuid4())
         if replace:
             self.reference(replace)
@@ -94,7 +98,8 @@ class Profiles:
                 "created": replace["created"] if replace else datetime.now(timezone.utc).isoformat(),
                 "updated": datetime.now(timezone.utc).isoformat(),
                 "reference": reference.name, "original": original.name,
-                "duration": info.duration, "sample_rate": rate, "version": version,
+                "duration": len(mono) / rate, "sample_rate": rate, "version": version,
+                "source_duration": info.duration, "cleanup": cleanup,
             }
             atomic_json(directory / "profile.json", profile)
         except Exception:

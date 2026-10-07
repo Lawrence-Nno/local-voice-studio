@@ -12,6 +12,8 @@ import soundfile as sf
 
 from .storage import DATA, atomic_json, read_json
 
+GENERATION_PRESETS = {"Default": (.8, 1.2), "Steady": (.65, 1.2), "Expressive": (.9, 1.2)}
+
 
 class Cancelled(Exception):
     pass
@@ -38,7 +40,14 @@ def chunk_text(text: str, limit: int = 240) -> list[str]:
 
 
 def run_job(engine, text: str, profile: dict | None, reference: Path | None,
-            device: str, cancel: Event, progress, data: Path = DATA) -> Path:
+            device: str, cancel: Event, progress, data: Path = DATA, options: dict | None = None) -> Path:
+    options = options or {}
+    preset = options.get("preset", "Default")
+    if preset not in GENERATION_PRESETS:
+        raise ValueError("Choose a valid generation preset.")
+    seed = options.get("seed")
+    if seed is not None and (not isinstance(seed, int) or not 0 <= seed <= 2**32 - 1):
+        raise ValueError("Seed must be a whole number from 0 to 4294967295, or blank.")
     chunks = chunk_text(text)
     job_id = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:8]
     directory = data / "jobs" / job_id
@@ -48,7 +57,8 @@ def run_job(engine, text: str, profile: dict | None, reference: Path | None,
     metadata = {"id": job_id, "state": "loading", "created": datetime.now(timezone.utc).isoformat(),
                 "profile_id": profile["id"] if profile else None,
                 "profile_version": profile["version"] if profile else None,
-                "generic_test": profile is None, "sections": len(chunks), "completed": 0}
+                "generic_test": profile is None, "sections": len(chunks), "completed": 0,
+                "generation_options": {"preset": preset, "seed": seed}}
     atomic_json(directory / "job.json", metadata)
     temporary = outputs / (job_id + ".partial.wav")
     started = time.perf_counter()
@@ -58,12 +68,24 @@ def run_job(engine, text: str, profile: dict | None, reference: Path | None,
         engine.load(device, progress)
         progress(f"Preparing {'saved voice' if profile else 'generic test voice'} on {engine.device}")
         engine.prepare(reference)
+        if seed is not None:
+            import random
+            import torch
+            random.seed(seed)
+            np.random.seed(seed)
+            torch.manual_seed(seed)
+            if torch.cuda.is_available():
+                torch.cuda.manual_seed_all(seed)
         paths, rate = [], None
         for index, chunk in enumerate(chunks, 1):
             if cancel.is_set():
                 raise Cancelled()
             progress(f"Generating section {index} of {len(chunks)} on {engine.device}", index - 1, len(chunks))
-            audio, section_rate = engine.generate(chunk)
+            if options:
+                temperature, repetition = GENERATION_PRESETS[preset]
+                audio, section_rate = engine.generate(chunk, temperature=temperature, repetition_penalty=repetition)
+            else:
+                audio, section_rate = engine.generate(chunk)
             if not len(audio) or not np.isfinite(audio).all():
                 raise ValueError("The model returned invalid audio. Try a shorter section or a different recording.")
             if rate is not None and rate != section_rate:

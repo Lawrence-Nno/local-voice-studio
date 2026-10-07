@@ -56,11 +56,11 @@ class SpeechEngine:
             elif self.model.conds is None:
                 raise ValueError("The generic test voice is unavailable. Import a recording first.")
 
-    def generate(self, text: str):
+    def generate(self, text: str, temperature=.8, repetition_penalty=1.2):
         import torch
         tokens = self.model.tokenizer(text, return_tensors="pt").input_ids.shape[-1]
         if tokens > 200:
             raise ValueError("This section has too many tokens. Use shorter sentences.")
         with torch.inference_mode():
-            audio = self.model.generate(text)
+            audio = self.model.generate(text, temperature=temperature, repetition_penalty=repetition_penalty)
         return audio.detach().cpu().numpy().reshape(-1), self.model.sr

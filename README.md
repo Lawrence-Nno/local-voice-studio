@@ -63,7 +63,23 @@ The selected voice is restored on restart. The application saves its own referen
 
 One job runs at a time, with a maximum of 20,000 characters. Text is generated in short sections and assembled into a completed WAV. Cancellation takes effect between sections or during assembly; the active model operation may need to finish. Partial sections remain in `data/jobs/`, but no unfinished full-text WAV is published. Automatic resume is not implemented.
 
-## Recording guidance
+## Reference cleanup and generated voice refinement
+
+When adding or replacing a recording, **Prepare reference recording** lets you set start/end times, trim quiet edges, normalize volume, and optionally apply gentle stationary-noise reduction. Click **Play original** and **Preview cleanup** to compare, then **Use reference** to save. The processed reference must remain longer than five seconds. Noise reduction is off by default because it can alter voice detail. Turning all processing options off uses the selected segment without normalization, apart from peak protection.
+
+**Clean saved reference** opens the selected profile's preserved original recording. Saving creates a new version; the source recording and previous references are retained. Existing profiles remain compatible without migration.
+
+Generation now offers **Default**, **Steady**, and **Expressive** delivery presets. These change Turbo's sampling temperature (0.8, 0.65, and 0.9 respectively), with repetition penalty 1.2. They are sampling choices, not guaranteed emotion or pronunciation controls. An optional integer **Seed** between 0 and 4294967295 supports repeatable comparisons with identical text, reference, settings, hardware, and runtime; GPU results are not guaranteed bit-for-bit deterministic. Blank uses normal random sampling. Preset and seed are recorded with each job.
+
+**Output polish** offers **Original**, **Natural polish**, and **Brighter speech**, with adjustable strength. Natural polish applies a gentle low-frequency filter, mild compression, volume normalization, and peak protection. Brighter speech also adds modest presence emphasis. The initial selection is Natural polish at half strength. Processing runs after generation and always preserves the original completed WAV; no new model or download is required.
+
+Use the **Original/Polished** selector beside playback to compare or export either version. **Apply polish** reapplies the current settings to the original output, never to an already polished copy. Polished WAVs use the `-polished.wav` suffix, with a JSON sidecar recording mode and strength. Selecting Original bypasses polishing. A processing failure leaves the completed original available.
+
+These features refine the signal and allow delivery experiments. They do not retrain the voice model, reliably change accent, repair every pronunciation error, or establish better resemblance. Listen to the original and processed versions to choose what works for your voice.
+
+Nine automated tests now cover the original workflows plus cleanup, source preservation, audio bounds, and seeded sampling. UI selection and both export versions were verified. A cleaned private copy of the user's recording passed offline GPU generation with Steady delivery and seed 42, followed by both polish modes. The source recording was unchanged. Subjective improvements require listening assessment.
+
+### Recording recommendations
 
 For the proposed Turbo backend, prepare approximately 10–15 seconds of clear English speech in a WAV file. Record one speaker in a quiet room, without background music, clipping, heavy echo, or long silence.
 
