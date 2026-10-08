@@ -89,7 +89,7 @@ class EditorPanel:
         app.root.after(100, self.poll)
 
     def occupied(self):
-        return self.app.conversion_running or self.app.editor_running or self.app.recording_running or self.app.subtitle_running or self.app.mix_running or (self.app.worker and self.app.worker.is_alive())
+        return self.app.batch_running or self.app.conversion_running or self.app.editor_running or self.app.recording_running or self.app.subtitle_running or self.app.mix_running or (self.app.worker and self.app.worker.is_alive())
 
     def open_join(self):
         if self.join_dialog and self.join_dialog.winfo_exists():

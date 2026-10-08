@@ -241,3 +241,11 @@ Validation: `python -m scripts.check_cleanup` verifies measured synthetic noise 
 Click **Join clips...** in Audio editor. Add WAV/FLAC/OGG/MP3 files, or **Add current edited selection** to capture the current trim, volume and fades. Repeat for additional sections; move clips up/down, remove them, or clear the list. Choose output rate and Mono/Stereo, plus an optional 0-10 second gap. **Preview joined clips** plays the sequence; **Save joined WAV** makes it the last saved edit. Export it from the Audio editor. Sources remain unchanged and protected against export overwrite.
 
 Joining supports 2-50 clips and up to one hour of output. Mono/stereo conversion uses the bundled audio library and can change channel amplitude. No crossfade or multitrack overlap is applied. Recreate subtitles for the joined output. Validation: `python -m scripts.check_join`.
+
+## Batch processing
+
+Open **Batch processing**, add up to 100 audio files, and choose **Cleanup**, **Convert**, or **Subtitles**. Click **Open operation settings**, adjust options in that tab, and return to start the batch. The run captures those settings once and processes the queue sequentially. Subtitles recognizes words in each file; saved-script alignment is not used.
+
+Choose an optional output location; each run creates a new `batch-<id>` folder (default `data/batches`) with numbered output files, `batch-report.json` and a worker log. This avoids filename collisions and preserves originals. The report records settings, source paths, completed outputs and per-file errors. **Continue with remaining files if one file fails** is enabled by default. **Cancel batch** stops the current worker, discards its partial output and leaves completed results available. Open the last batch folder to retrieve files or review the report.
+
+Existing offline cleanup/conversion/subtitle runtimes are reused. Subtitle jobs reload the local Whisper model per file; processing is sequential, with no additional downloads. Other audio jobs and app closing are blocked during a batch. Review generated subtitle text and timings before use. Validation: `python -m scripts.check_batch`.

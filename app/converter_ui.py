@@ -28,6 +28,7 @@ class ConverterPanel:
 
     def __init__(self, app, parent):
         self.app = app
+        self.parent = parent
         self.source = self.output = self.output_source = None
         self.process = None
         self.cancel = threading.Event()
@@ -107,7 +108,7 @@ class ConverterPanel:
             messagebox.showinfo('Choose audio first','Open an audio file, or finish recording, generation, or editing first.')
 
     def start(self):
-        if self.app.conversion_running or self.app.editor_running or self.app.recording_running or self.app.subtitle_running or self.app.mix_running or (self.app.worker and self.app.worker.is_alive()):
+        if self.app.batch_running or self.app.conversion_running or self.app.editor_running or self.app.recording_running or self.app.subtitle_running or self.app.mix_running or (self.app.worker and self.app.worker.is_alive()):
             messagebox.showinfo('Audio task running','Finish the active audio task first.')
             return
         if not self.source or not self.source.is_file():
