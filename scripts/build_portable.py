@@ -50,6 +50,7 @@ def main():
     compiler = Path("C:/Windows/Microsoft.NET/Framework64/v4.0.30319/csc.exe")
     subprocess.run([str(compiler), "/nologo", "/target:winexe", "/platform:x64",
         "/reference:System.Windows.Forms.dll", "/out:" + str(target / "Local Voice Studio.exe"),
+        "/win32icon:" + str(ROOT / "app" / "assets" / "local-voice-studio.ico"),
         str(ROOT / "packaging" / "Launcher.cs")], check=True)
     (target / "READ ME.txt").write_text(
         "Local Voice Studio - portable Windows x64 edition\n\n"

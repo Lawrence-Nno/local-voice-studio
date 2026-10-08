@@ -21,6 +21,9 @@ class VoiceApp:
     def __init__(self, root: tk.Tk):
         self.root = root
         root.title("Local Voice Studio")
+        icon = Path(__file__).resolve().parent / "assets" / "local-voice-studio.ico"
+        if icon.exists():
+            root.iconbitmap(default=str(icon))
         scale = max(1.0, root.winfo_fpixels("1i") / 96)
         width = min(round(940 * scale), root.winfo_screenwidth() - 80)
         height = min(round(740 * scale), root.winfo_screenheight() - 120)
