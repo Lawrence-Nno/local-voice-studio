@@ -32,7 +32,7 @@ def main():
     print("Bundling app and model weights", flush=True)
     shutil.copytree(ROOT / "app", target / "app", ignore=ignore)
     (target / "scripts").mkdir()
-    for name in ("__init__.py", "check_qwen.py", "check_subtitles.py", "check_music.py", "check_recorder.py", "check_editor.py", "check_recording_subtitles.py", "check_converter.py", "check_cleanup.py", "check_join.py", "check_batch.py", "check_effects.py"):
+    for name in ("__init__.py", "check_qwen.py", "check_subtitles.py", "check_music.py", "check_recorder.py", "check_editor.py", "check_recording_subtitles.py", "check_converter.py", "check_cleanup.py", "check_join.py", "check_batch.py", "check_effects.py", "check_audio_info.py"):
         source = ROOT / "scripts" / name
         if source.exists():
             shutil.copy2(source, target / "scripts" / name)
@@ -45,6 +45,7 @@ def main():
     for name in ("model-spec.json", "qwen-model-spec.json", "requirements-lock.txt", "requirements-qwen-lock.txt", "subtitle-model-spec.json"):
         shutil.copy2(ROOT / name, target / name)
     shutil.copy2(ROOT / "packaging" / "Create desktop shortcut.ps1", target)
+    shutil.copy2(ROOT / "README.md", target / "README.md")
     (target / "Create desktop shortcut.cmd").write_text(
         '@echo off\r\npowershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0Create desktop shortcut.ps1"\r\nif errorlevel 1 pause\r\n')
     compiler = Path("C:/Windows/Microsoft.NET/Framework64/v4.0.30319/csc.exe")

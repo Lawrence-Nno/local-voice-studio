@@ -99,10 +99,21 @@ class VoiceApp:
         from .effects_ui import EffectsPanel
         self.effects_panel = EffectsPanel(self, effects_tab)
         self.notebook = notebook
+        menu = tk.Menu(root)
+        menu.add_command(label="Audio file information...", command=self.open_audio_info)
+        root.configure(menu=menu)
+        self.audio_info_dialog = None
         self.refresh_profiles()
         self.select_model()
         root.protocol("WM_DELETE_WINDOW", self.close)
         root.after(100, self.poll)
+
+    def open_audio_info(self):
+        if self.audio_info_dialog and self.audio_info_dialog.winfo_exists():
+            self.audio_info_dialog.lift()
+            return
+        from .audio_info_ui import AudioInfoDialog
+        self.audio_info_dialog = AudioInfoDialog(self)
 
     def update_model_controls(self):
         qwen = self.model_choice.get() == "Qwen3-TTS 1.7B Base"

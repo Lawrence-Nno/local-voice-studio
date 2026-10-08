@@ -1,259 +1,183 @@
 # Local Voice Studio
 
-A Windows desktop application that converts English text into speech using a locally runnable voice-cloning model. Recordings, profiles, and generated audio stay on this computer.
+A personal Windows audio studio for local voice cloning, text-to-speech, recording, editing, subtitles, music mixing, cleanup, conversion, batch processing, and voice effects.
 
-## Current status
+**Designed by Chima Lawrence Nnoromele**
 
-The first application is implemented with persistent voice profiles, background generation, WAV playback/export, and longer-text chunking. Personal voice resemblance remains unverified until a recording is supplied and the user assesses the output.
+**Email:** [lawrence.nno@gmail.com](mailto:lawrence.nno@gmail.com)
 
-The detailed design and local verification record are in [IMPLEMENTATION_GUIDE.md](IMPLEMENTATION_GUIDE.md).
+Audio processing and model inference run locally. Internet access is needed for initial dependency/model downloads, not normal use. Recordings, saved voices, outputs, and preferences belong to your local copy of the app.
 
-Python 3.11.15, Tkinter, and CUDA-enabled PyTorch are installed in the project. CUDA tensor execution succeeded on the RTX 3060 Laptop GPU with approximately 6 GB VRAM. The native window layout was inspected at the display's scaling. Five core tests passed for chunking, profile persistence, safe replacement, output assembly, and cancellation.
+## Complete feature list
 
-## Features
+- **Text to speech and voice cloning:** Chatterbox Turbo and Qwen3-TTS 1.7B Base, persistent voice profiles, saved reference versions, remembered model/voice selection, longer-text chunking, delivery presets, optional seed, playback, and WAV export.
+- **Reference preparation before cloning:** select a section, trim quiet edges, adjust volume, optional gentle noise reduction, and compare original/prepared recordings.
+- **Generated speech refinement:** Natural polish or Brighter speech with adjustable strength, original/polished comparison, and separate exports.
+- **Audio to subtitles:** transcribe imported audio or align the saved script of generated speech; local Whisper Small, automatic/English language selection, CPU/GPU options, editable SRT text/timings, validation, and UTF-8 export.
+- **Background music:** import music, adjust voice/music volume, automatic ducking, music start position, optional looping, music fades, preview, peak protection, and mixed WAV export with license/credit notes.
+- **Voice recorder:** microphone selection/refresh, level meter, recorded-time display, start/pause/resume/stop, separate WAV takes, playback/export, reference-cleanup handoff, and recording-to-subtitles shortcut.
+- **Audio editor:** waveform display and drag selection, exact start/end times, trimming, volume, fades, selection preview, source-preserving WAV save/export, and reference handoff.
+- **Clip joining:** add whole files or edited selections, reorder/remove/clear clips, choose output rate/channels and optional gaps, preview, and save one joined WAV.
+- **Format converter:** WAV, MP3, FLAC, M4A/AAC, and OGG/Opus output; sample-rate/channel options, compressed bitrates, cancellation, and separate-file export.
+- **Audio cleanup:** adjustable steady-noise reduction, volume adjustment, automatic leveling, optional low-rumble removal, original/cleaned playback, peak protection, and cleaned WAV export.
+- **Batch processing:** queue multiple files for cleanup, conversion, or transcription; settings snapshots, per-file status, optional continuation after errors, cancellation retaining completed files, and a run report.
+- **Voice effects:** independent speed/pitch adjustment, room reverb, optional radio-style filtering/saturation, reset, original/processed playback, cancellation, and WAV export.
+- **Audio file information:** inspect duration, format/codec, sample rate, channels, file size, and full path; select a local file or loaded input/result and copy details to the clipboard.
+- **Portable Windows launch:** native EXE, custom application icon, bundled runtimes/models, and a desktop-shortcut creator.
 
-- Local Windows operation, offline after installation and model downloads.
-- No cloud speech-generation calls or recurring subscription.
-- Persistent voice profiles with saved reference recordings.
-- Automatic reuse of the selected voice across application restarts.
-- Add or replace recordings for different speaking styles.
-- Text entry, generation progress, audio playback, and WAV export.
-- NVIDIA GPU acceleration when verified, plus an explicit CPU option.
-- Longer-text processing in manageable sections.
+## Launch and transfer
 
-## Technology
+### Portable app
 
-- Python 3.11 with a project-local virtual environment.
-- Tkinter/ttk desktop interface.
-- PyTorch inference.
-- Chatterbox Turbo 0.1.7 backend for English speech.
+The current portable folder is:
 
-The model and its dependencies retain their own licenses. The [official repository](https://github.com/resemble-ai/chatterbox) and [model card](https://huggingface.co/ResembleAI/chatterbox-turbo) describe the model and its MIT license. The application retains built-in PerTh watermarking. `model-spec.json` pins the model revision; `requirements-lock.txt` pins installed dependency versions.
+```text
+C:\work\codebase\voice\dist\Local Voice Studio
+```
 
-## Target hardware
+Run **Local Voice Studio.exe**. To transfer the app to another Windows x64 PC, close it and copy the **entire Local Voice Studio folder**, including `app`, `runtime`, `models`, `data`, and supporting files. The EXE alone is not the application.
 
-- AMD Ryzen 9 6900HS.
-- 39.2 GB usable RAM.
-- NVIDIA GeForce RTX 3060 Laptop GPU with 6 GB dedicated VRAM.
-- Windows reporting build 26200 during initial inspection.
+Put the folder in a writable location. Run **Create desktop shortcut.cmd**, located beside the EXE, to create a shortcut for the new location. Run it again after moving the folder. No separate Python installation or model download is needed for this built copy. GPU acceleration needs a compatible NVIDIA GPU and installed driver; CPU processing is available and can be slower. Other PCs have not been verified.
 
-## Setup and launch
+The project's `data` folder and the portable app's `data` folder are **separate**. Copying the portable app includes only that copy's profiles, recordings, settings, and outputs. Back up any source-project data separately.
 
-Double-click **`launch.cmd`** in this folder. Normal launch uses the local environment and does not download anything.
+The current package is Windows x64. It is not a macOS application; the Windows EXE and runtime libraries cannot run directly on a Mac.
 
-For a new installation, open PowerShell in this folder and run:
+### Source installation
+
+Run **launch.cmd** from the project folder to use its local environment. For a fresh installation, install `uv`, open PowerShell in the project folder, and run:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\setup.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\setup-qwen.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\setup-subtitles.ps1
 ```
 
-The execution-policy bypass applies only to that process. Setup requires `uv`, internet access, and approximately 15 GB free for initial installation. It installs project-local Python, CUDA PyTorch, pinned dependencies, and model files. Downloads are several GB. It does not change NVIDIA drivers or system-wide Python.
+Setup downloads several GB and installs project-local Python, libraries, and models. Allow sufficient free space for both runtimes and all models; the full portable build is roughly 18 GiB. Setup does not install NVIDIA drivers or change system-wide Python. Normal launches use local files.
 
-## Using the application
+## Text to speech and voice profiles
 
-1. Click **Add recording**, choose a WAV, and give the voice a name.
-2. Enter English text and click **Generate with saved voice**.
-3. Click **Play** or **Export WAV** when generation completes.
+Choose **Chatterbox Turbo** for fast English generation or **Qwen3-TTS 1.7B Base** to try the alternative cloning model. Both use the same saved voice profiles, text entry, generation, playback, and export workflow. Switching unloads the previous model. The app currently generates English with both models.
 
-The selected voice is restored on restart. The application saves its own reference copy, so moving your original source file does not break the profile. **Replace recording** updates the selected voice; **Add recording** creates a separate voice or style. Previous reference versions remain locally stored.
+Add or replace a WAV reference and name the voice. References must be mono/stereo, longer than 5 seconds and at most 60 seconds, at 8-192 kHz, below 100 MB. A clear 10-30 second recording in a quiet room is a practical starting point. Original recordings and previous prepared versions are retained.
 
-**Generic speech test** uses the bundled model voice, not yours. If the text box is empty, it uses a short test sentence.
+Reference cleanup happens **before cloning**. Generated Output polish happens **after generation**. Natural polish applies mild filtering, compression, volume adjustment, and peak protection; Brighter speech adds presence emphasis. Compare Original and Polished to choose the result you prefer.
 
-**Automatic** selects CUDA when available and otherwise reports CPU operation. **NVIDIA GPU** requires CUDA. **CPU** explicitly requests slower CPU inference; a short generic CPU generation has been verified.
+With Qwen selected, **Reference transcript...** accepts the exact words spoken in that prepared reference. A blank transcript uses audio-only speaker embedding; a supplied transcript enables audio-and-transcript cloning. Transcripts belong to a reference version and must match it. Turbo also offers a built-in generic voice test; Qwen requires a reference.
 
-One job runs at a time, with a maximum of 20,000 characters. Text is generated in short sections and assembled into a completed WAV. Cancellation takes effect between sections or during assembly; the active model operation may need to finish. Partial sections remain in `data/jobs/`, but no unfinished full-text WAV is published. Automatic resume is not implemented.
-
-## Reference cleanup and generated voice refinement
-
-When adding or replacing a recording, **Prepare reference recording** lets you set start/end times, trim quiet edges, normalize volume, and optionally apply gentle stationary-noise reduction. Click **Play original** and **Preview cleanup** to compare, then **Save voice reference** to save. The processed reference must remain longer than five seconds. Noise reduction is off by default because it can alter voice detail. Turning all processing options off uses the selected segment without normalization, apart from peak protection.
-
-**Clean selected voice reference?** opens the selected profile's preserved original recording. Saving creates a new version; the source recording and previous references are retained. Existing profiles remain compatible without migration.
-
-Generation now offers **Default**, **Steady**, and **Expressive** delivery presets. These change Turbo's sampling temperature (0.8, 0.65, and 0.9 respectively), with repetition penalty 1.2. They are sampling choices, not guaranteed emotion or pronunciation controls. An optional integer **Seed** between 0 and 4294967295 supports repeatable comparisons with identical text, reference, settings, hardware, and runtime; GPU results are not guaranteed bit-for-bit deterministic. Blank uses normal random sampling. Preset and seed are recorded with each job.
-
-**Output polish** offers **Original**, **Natural polish**, and **Brighter speech**, with adjustable strength. Natural polish applies a gentle low-frequency filter, mild compression, volume normalization, and peak protection. Brighter speech also adds modest presence emphasis. The initial selection is Natural polish at half strength. Processing runs after generation and always preserves the original completed WAV; no new model or download is required.
-
-Use the **Original/Polished** selector beside playback to compare or export either version. **Reapply polish to latest audio** reapplies the current settings to the original output, never to an already polished copy. Polished WAVs use the `-polished.wav` suffix, with a JSON sidecar recording mode and strength. Selecting Original bypasses polishing. A processing failure leaves the completed original available.
-
-These features refine the signal and allow delivery experiments. They do not retrain the voice model, reliably change accent, repair every pronunciation error, or establish better resemblance. Listen to the original and processed versions to choose what works for your voice.
-
-Nine automated tests now cover the original workflows plus cleanup, source preservation, audio bounds, and seeded sampling. UI selection and both export versions were verified. A cleaned private copy of the user's recording passed offline GPU generation with Steady delivery and seed 42, followed by both polish modes. The source recording was unchanged. Subjective improvements require listening assessment.
-
-### Recording recommendations
-
-For the proposed Turbo backend, prepare approximately 10–15 seconds of clear English speech in a WAV file. Record one speaker in a quiet room, without background music, clipping, heavy echo, or long silence.
-
-No personal reference recording has been supplied yet. Generic speech tests will be distinguished from tests of resemblance to your voice.
-
-Supported references are mono/stereo WAV, longer than 5 seconds and no longer than 60 seconds, at 8–192 kHz, below 100 MB. Put clear speech at the start; the model uses the opening portions of a reference.
-
-## Local data and version control
-
-Recordings, voice profiles, generated audio, model files, logs, caches, Python environments, and Markdown guides are excluded from Git by default. Guide filenames must contain `guide` (case-insensitive) to match the ignore rule. These files remain local; Git will not back them up. Back up personal data and reference guides separately.
-
-This repository is local. No remote repository or hosting service has been configured.
-
-- `data/profiles/`: original recordings, prepared references, and voice metadata.
-- `data/settings.json`: selected voice and device preference.
-- `data/outputs/`: completed WAV files.
-- `data/jobs/`: generated sections and job metadata, including timing and model revision.
-- `models/chatterbox-turbo/`: pinned model files and manifest.
-- `.venv/`, `.python/`, `.cache/`: runtime and caches.
-
-Entered text is not retained in job metadata or diagnostic logs. Local storage is ordinary files, not encryption. Back up personal data separately; Git does not back it up.
-
-Runtime uses local checkpoints with Hugging Face and Transformers offline settings. Missing model files produce a setup-repair message rather than an automatic download.
-
-## Verification and troubleshooting
-
-```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
-.\.venv\Scripts\python.exe -m scripts.diagnose
-.\.venv\Scripts\python.exe -m scripts.smoke_test
-```
-
-The smoke test generates generic speech from a fresh engine with Python socket connections blocked. Results are recorded in `data/smoke-test.json` when successful. This does not establish personal resemblance or prove that every native library is incapable of network access. Audible playback quality still requires the user to listen.
-
-Measured on this computer on 7 October 2026:
-
-- GPU generic test: 5.48-second, 24 kHz WAV; approximately 29 seconds including cold model loading; peak PyTorch reserved GPU memory approximately 2.84 GiB.
-- Total GPU usage at the end of that test: approximately 3.87 GiB, including other device usage.
-- Saved synthetic reference test: profile restored from disk; two generated sections assembled into a 16.1-second WAV in approximately 28 seconds including model loading and reference preparation.
-- Short generic CPU generation succeeded.
-- Setup rerun reused the pinned environment and model successfully.
-- UI background-job transitions passed; WAV export was byte-identical; Windows accepted the playback call. Audible quality still needs the user's listening assessment.
-
-These are initial functional measurements, not a speed guarantee or a personal voice quality rating. GPU memory can grow with different prompts and references. No actual personal recording has been tested. The synthetic profile test can be repeated with `.\.venv\Scripts\python.exe -m scripts.verify_reference` after the generic smoke test.
-
-- **Missing runtime or model files:** rerun `setup.ps1` while online.
-- **CUDA unavailable:** inspect `data/diagnostics.json`; select CPU explicitly or repair the runtime.
-- **GPU memory exhausted:** close GPU-heavy apps, shorten text, or explicitly retry on CPU.
-- **Damaged profile:** restore `data/profiles/` from backup or add a new recording. Invalid profiles are reported while other profiles remain usable.
-- **Playback fails:** check the Windows output device or export the WAV to a local player.
-- **Interrupted job:** completed section WAVs remain in `data/jobs/`.
-
-## Development reference
-
-See [IMPLEMENTATION_GUIDE.md](IMPLEMENTATION_GUIDE.md) for the architecture, profile storage, generation workflow, offline requirements, installation plan, milestones, and acceptance criteria.
-
-The guide is intentionally excluded from future Git commits and may be absent in a new checkout.
-
-## Desktop interface
-
-The numbered cards separate recording preparation (before generation), text and delivery settings, and audio polish (after generation). Mode explanations, a polish-strength percentage, and a live character count clarify the active settings. **Generate my voice** uses the selected reference; **Test built-in voice** uses the model's generic voice. **Play selected** and **Export selected WAV?** use the Original/Polished selection.
-
-## Choosing a speech model
-
-**Speech model** selects **Chatterbox Turbo** or **Qwen3-TTS 1.7B Base**. The selection is remembered on restart. Turbo is the fast English backend with a built-in test voice. Qwen Base needs a saved voice reference, so its built-in-test button is disabled. Both use the same generation, playback, export, and output-polish workflow. Switching unloads the previous model before loading the new one.
-
-Qwen uses a separate `.venv-qwen` environment and `models/qwen3-tts-1.7b` snapshot, leaving Turbo's dependencies intact. For a fresh installation, run `setup.ps1`, then `setup-qwen.ps1` while online. Qwen dependencies are pinned in `requirements-qwen-lock.txt`; its model revision is pinned in `qwen-model-spec.json`. Inference uses only local files. Qwen uses PyTorch SDPA attention on Windows rather than requiring FlashAttention.
-
-With Qwen selected, **Reference transcript...** lets you enter the exact words spoken in the selected prepared recording. A nonempty transcript enables its audio-and-transcript cloning mode; blank uses speaker-embedding-only cloning. A transcript is tied to the reference version and must be supplied again after changing the reference. No automatic transcription or upload is performed. The app currently generates English with both models. Larger model size does not establish better personal resemblance; compare unpolished samples using identical text and recordings.
-
-Qwen's model and code are Apache-2.0 licensed. See the [official Qwen repository](https://github.com/QwenLM/Qwen3-TTS) and [1.7B Base model card](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base).
-
-Qwen delivery presets use temperature 0.9 (Default), 0.65 (Steady), or 1.0 (Expressive), with repetition penalty 1.05. These are sampling controls rather than guaranteed emotional styles. Actual sampling values are saved with each job.
-
-### Local Qwen verification
-
-On the RTX 3060 Laptop GPU (6 GB), Qwen 1.7B successfully generated a 24 kHz WAV using an existing voice reference in audio-only mode. A six-second sample took 36.7 seconds including loading and 22.3 seconds with the model already loaded. Peak PyTorch CUDA reserved memory was 4.26 GiB; other GPU allocations are additional. Turbo generated the same text/reference in 3.0 seconds when loaded, producing 4.52 seconds of audio. These are short local measurements, not general benchmarks. Subjective resemblance and clarity require listening.
-
-Unpolished comparison samples are saved locally at `data/outputs/model-comparison/qwen-1.7b.wav` and `data/outputs/model-comparison/chatterbox-turbo.wav`. Detailed measurement records are in `data/qwen-comparison.json` and `data/turbo-comparison.json`. These personal files remain excluded from Git. CPU inference and audio-and-transcript Qwen quality have not been verified. Thirteen automated tests, native layout/control checks, UI routing and release in both switch directions, playback/export checks, and real GPU generation with both models passed.
-
-## Portable Windows app
-
-The portable edition contains `Local Voice Studio.exe`, the app, both model snapshots, and separate standalone Python runtimes. Keep the entire folder together when copying or moving it. Launch the EXE from a writable location on Windows x64; no Python installation or model download is required. NVIDIA GPU acceleration needs a compatible installed NVIDIA driver. Compatibility on other PCs is not yet verified.
-
-Double-click `Create desktop shortcut.cmd` inside the portable folder to create a desktop shortcut. Run it again after moving the folder. Profiles, preferences, generated WAVs, caches, and logs belong to that copy's local `data` and `.cache` folders. Close the app before moving it. A personal build includes your saved voice recordings; it does not include the source project's output history.
-
-To rebuild from the verified developer installation, run `.venv\Scripts\python.exe -m scripts.build_portable --include-profiles`. Omit `--include-profiles` for a copy without personal recordings. Allow at least 20 GiB free during building. The builder creates `dist/Local Voice Studio.build`; it refuses to overwrite an existing build. The native launcher is compiled with Windows' .NET Framework C# compiler. Build artifacts remain ignored by Git. The launcher uses `app.desktop` to capture logs in `data/launch.log`, while Qwen's adapter selects the bundled interpreter when present.
-
-
-The completed personal package is at `dist/Local Voice Studio` (17.16 GiB), with a `Local Voice Studio` desktop shortcut already created. Verification on 8 October 2026 passed after renaming the build folder: executable/native UI launch, bundled interpreter paths, 13 source regression tests, and real offline GPU generation with both bundled models. Loaded-model generation took 2.75 seconds with Turbo and 20.50 seconds with Qwen for the short comparison sentence. Initial loading was slower from the fresh copy. Moving to a different PC remains unverified; the Windows x64 target and NVIDIA-driver requirements still apply.
+Default/Steady/Expressive presets change sampling settings. An optional integer seed supports comparisons. These controls do not guarantee emotions, accents, better resemblance, or bit-identical GPU results. Maximum script length is 20,000 characters, generated in sections. TTS cancellation may wait for the active section to finish. Completed original output remains available if polishing fails.
 
 ## Audio to subtitles
 
-The **Audio to subtitles** tab provides two offline workflows:
+Use **Import audio...** to recognize speech in a local recording. For generated speech, **Use generated speech + saved script** aligns its saved English script with the generated audio. Alignment uses the script captured at generation, not later edits in the text box.
 
-- **Import audio...** recognizes spoken words and their timestamps using multilingual Whisper Small. Common formats include WAV, MP3, M4A, FLAC, OGG, AAC, and WMA, decoded through PyAV's bundled media libraries. Choose Automatic language detection or English explicitly.
-- **Use generated speech + saved script** aligns the exact English script saved with a newly generated TTS job, preserving wording instead of replacing it with recognition guesses. It uses actual generated section audio and accounts for inter-section pauses. Original and Polished have identical timing; the currently selected version identifies the source. Edits made later in the TTS text box do not alter the saved script. Older jobs without a saved script can be transcribed by importing their WAV.
+Choose language/device, click **Create subtitles**, review the editable cues, and **Export reviewed SRT...**. Invalid SRT edits are rejected. Timings and recognized words are estimates and should be reviewed. No translation or speaker diarization is implemented.
 
-Click **Create subtitles**, review/edit the SRT text and timing lines, then **Export reviewed SRT...**. UTF-8 export validates sequential cue numbers, positive durations, and non-overlapping chronological times. Automatically created cues aim for at most two 42-character lines and seven seconds per cue; unusually long individual words can exceed line width. Timings are model estimates and should be reviewed. Silence or unrecognizable speech produces an error instead of an empty subtitle file.
-
-Only one audio job runs at a time. Subtitle processing releases the loaded TTS model, runs in a cancellable isolated worker, and exits afterward. Cancellation or failure keeps the previous editor contents. Automatic SRT results and metadata are saved under `data/subtitles`; exports include your edits. Generated-script alignment currently supports English and sections up to 30 seconds each; longer sections can use transcription. There is no speaker diarization, subtitle translation, video preview, or manual audio-timing playback in this version.
-
-The subtitle model revision is pinned in `subtitle-model-spec.json`; worker dependencies share the isolated Qwen environment and its lock file. Run `setup-subtitles.ps1` for a developer installation after the Qwen environment is set up. Fresh portable builds include Whisper Small; the existing personal portable copy is updated in place by `scripts/update_portable_subtitles.py`, preserving data. The [Faster-Whisper repository](https://github.com/SYSTRAN/faster-whisper) describes its transcription and timestamp APIs.
-
-Both subtitle workflows passed real GPU and CPU checks. Seventeen automated tests passed, along with native tab layout, saved-script selection after textbox edits, UTF-8 export, invalid-edit rejection, cancellation, shared job locking, TTS model switching and original/polished audio export checks. The existing portable executable opens both tabs and passed both GPU subtitle workflows. Generated SRT files are ignored by Git.
-
-With subtitles included, the updated personal portable folder is approximately 17.83 GiB. Your existing desktop shortcut continues to point to it; reopen the app to load the new tab.
+From Voice recorder, finish a take with **Stop and save**, then click **Create subtitles from recording**. The subtitle tab opens with that take selected; click **Create subtitles**. Existing reviewed subtitles remain visible with their previous source identified until new processing succeeds.
 
 ## Background music
 
-Use the **Background music** tab to import voice/audio, or select the latest Original/Polished generated speech, then import a local music track. **Create music mix** produces a new stereo PCM WAV; **Preview mix** plays it, and **Export mixed WAV...** saves it with a `.mix.json` sidecar containing source paths, settings, peak-protection gain, and any music license/credit notes you entered.
+Import voice/audio or select generated speech, then import a music track. Set voice/music volume, ducking strength, music start, looping, and fades. **Create music mix** saves a separate stereo WAV; preview and export it with its `.mix.json` settings/license sidecar.
 
-Voice volume ranges from 0?200%; music volume ranges from 0?100% (default 15%). Automatic ducking lowers music during voice activity, with adjustable reduction (default 75%), quick attack and gradual release. Detection uses audio energy rather than a speech model, so background noise can trigger it. Music start chooses a position inside the music file. Looping repeats from that position when necessary, using brief boundary fades; without looping, music ends and the voice continues. Configurable fade-in/out affect only the music. Fade-out occurs at the end of the voice, or at the earlier music end when looping is off.
+The mix ends with the voice. Longer music is cut there and fades according to the fade-out setting. Short music can loop; with looping off, voice continues after music ends. Only music fades. Voice timing stays unchanged, so existing subtitle timings remain valid. Ducking detects audio energy, including noise; it is not a speech classifier.
 
-The voice starts at zero and keeps its speed and duration; existing SRT timestamps remain valid. Audio is decoded/resampled to 44.1 kHz stereo with PyAV and mixed in small blocks on CPU. A second pass reduces overall gain only if required to prevent clipping. Processing uses no online service or AI model. Temporary decoded audio is removed after completion/cancellation. Previous mixes and original files remain available on failure or cancellation. One audio job runs at a time across the app's three tabs.
-
-Use tracks licensed for your intended content and keep their license notes. The app imports music locally and does not distribute standalone tracks or include them in portable builds. The user's supplied YouTube Audio Library track was used only for local feature tests. Mixed results and metadata are stored in `data/mixes`; exported music license notes travel with the mixed WAV. There is no automatic music download or embedded music catalog.
-
-Background music verification passed with the supplied Running Home / Televisions MP3: stereo output, matching voice duration, finite peak-safe samples, original source hashes unchanged, Windows playback, byte-identical WAV export with notes, source-overwrite rejection, and cancellation retaining a previous mix. Short synthetic tracks verified looping versus silence after music ends; a deliberately loud fixture triggered peak attenuation. All 21 automated tests passed. TTS layout/switching/export and subtitle workflow regressions passed. The desktop portable copy opens three tabs and passed the same real-track checks using its bundled runtime. Reopen the app to load the new tab. Mixing takes place locally on CPU and requires no further downloads.
+Use music licensed for your intended content and retain required attribution. The app has no music-download service or bundled music catalog; imported standalone tracks are not packaged with the app.
 
 ## Voice recorder
 
-Open **Voice recorder**, select a microphone, and click **Start recording**. The input meter shows peak level; avoid reaching 100%. **Pause / Resume** skips paused audio, and **Stop and save** creates a separate mono PCM16 WAV in `data/recordings`. Recordings remain local and stop automatically at one hour.
+Choose a microphone and **Start recording**. Watch the peak meter; lower Windows input volume or move away if it reaches 100%. **Pause / Resume** skips paused audio. **Stop and save** creates a mono PCM16 WAV at the microphone's default sample rate. Takes stop automatically at one hour.
 
-Preview or export your take, or click **Clean up and use as voice reference** to open the existing cleanup workflow. For references, record longer than 5 seconds and at most 60 seconds. Finish recording before starting other audio tasks. If no input appears, check Windows microphone permissions and refresh the device list.
+Preview/export the take, send it to reference cleanup, or send it to subtitles. For cloning, record 6-60 seconds. If no microphone appears, connect one, check Windows microphone permissions, and refresh the device list.
 
-Validation: `python -m scripts.check_recorder` performs a short real microphone capture, pause/resume, export, error recovery, reference handoff, and UI checks.
+## Audio editor and joining
 
-## Audio editor
+Open WAV/FLAC/OGG/MP3 audio or use a recording/generated result. Drag across the waveform or enter start/end seconds. **The highlighted section is kept; audio outside it is removed.** Volume and fades are included in **Preview selection** and **Save edited WAV**. Export uses the last saved edit; changed settings require saving again. Trimming retains source rate/channels and writes PCM16 WAV.
 
-Open **Audio editor**, then **Open audio...**, **Use latest recording**, or **Use selected generated speech**. WAV, FLAC, OGG, and MP3 inputs are supported by the bundled decoder. Drag across the waveform or enter exact start/end seconds: the highlighted section is kept. Adjust volume and optional fade-in/fade-out, then **Preview selection** or **Save edited WAV**. The source stays unchanged; edits are stored in `data/edits` as PCM16 WAV with the original sample rate and channels.
+Click **Join clips...** to open an ordered clip list. Add whole audio files or **Add current edited selection** to capture its trim, volume, and fades. Move clips up/down, remove them, choose output rate/Mono/Stereo and an optional 0-10 second gap, then preview or save. Export the joined result from Audio editor. To remove a middle section, add the wanted sections and join them.
 
-**Export saved edit...** exports the last saved result. If you change settings, save again before exporting. **Use saved edit as voice reference** opens the reference-cleanup workflow. Inputs may be mono/stereo and at most one hour; trimming keeps one continuous selection. To remove a middle section, add the wanted sections to the join list and join them. Trimming changes timing, so recreate subtitles for the edited audio.
-
-Validation: `python -m scripts.check_editor` exercises waveform loading, trim/fades, preview, export, source protection, failed-edit recovery and native layout.
-
-### Recording to subtitles
-
-After **Stop and save** in Voice recorder, click **Create subtitles from recording**. The app switches to **Audio to subtitles** with the completed take selected for local transcription. Choose language/device if needed, then click **Create subtitles** and review/export the SRT. Previous subtitle edits remain visible and labelled with their original source until a new transcription succeeds.
+Joining supports 2-50 clips and up to one hour of output. Channel conversion may change amplitude. No crossfade or multitrack overlap is applied. Trimming/joining changes timing; recreate subtitles afterward. Originals are protected from export overwrite.
 
 ## Format converter
 
-Open **Format converter** and choose an imported file, latest recorded take, selected generated speech, or last saved edit. Choose **WAV**, **MP3**, **FLAC**, **M4A (AAC)**, or **OGG (Opus)**, then set sample rate, mono/stereo/source channels and bitrate where applicable. Click **Convert audio**, then **Export converted file...**. Completed conversions are stored in `data/converted`; exports use the last completed result. Cancellation and errors preserve the previous result and source file.
+Choose imported audio, a recording, generated speech, or a saved edit. Select WAV, MP3, FLAC, M4A (AAC), or OGG (Opus), sample rate, channels, and applicable bitrate. Click **Convert audio**, then **Export converted file...**.
 
-WAV and FLAC encode PCM16 audio; MP3, AAC and Opus are lossy. Opus always uses 48 kHz. Converting a compressed source cannot recover lost detail. Audio from the first stream is converted; video, artwork and metadata are not copied. Multichannel audio requires an explicit mono/stereo downmix. The existing bundled PyAV runtime handles conversion offline without models or additional downloads.
-
-Validation: `python -m scripts.check_converter` checks all five real encoders/decoders, round trips, duration/channels/resampling, export, cancellation, invalid inputs, source protection and native layout.
+WAV and FLAC encode PCM16 audio. MP3, AAC, and Opus are lossy; changing format cannot restore lost detail. Opus uses 48 kHz. The first audio stream is converted; artwork, other metadata, and video are not copied. Multichannel inputs require explicit Mono/Stereo downmix. Cancellation or failure preserves the prior completed result.
 
 ## Audio cleanup
 
-Open **Audio cleanup**, import audio or select a saved recording/generated clip, set noise reduction and volume, and click **Clean audio**. Automatic leveling targets -20 dBFS RMS with a maximum 10x gain; peak protection limits output to 0.98 full scale. Optional 70 Hz high-pass reduces low rumble. After completion, **Play original** and **Play cleaned** compare the last processed source/result; **Export cleaned WAV...** exports that result. Change settings and process again to update the result.
+Choose imported audio or a saved recording/generated clip. Adjust noise reduction/volume, optional automatic leveling and 70 Hz rumble removal, then **Clean audio**. Compare **Play original** and **Play cleaned**, and export the cleaned WAV. Reprocess after changing settings.
 
-Files remain local in `data/cleaned`. Mono/stereo channels, source rate and duration are preserved; output is PCM16 WAV. Use audio up to one hour at 8-192 kHz. Noise reduction estimates steady noise from quiet spectral frames throughout the source; start mild and compare speech quality. It is not voice separation and cannot reliably remove music, other speakers or restore clipped audio. Set reduction to zero, turn off rumble and automatic leveling, and adjust volume for volume-only processing.
+Start with mild noise reduction. This targets steady noise such as hiss or a fan; it is not voice separation and does not reliably remove music, other voices, or repair clipping. Volume-only processing is available by setting reduction to zero and disabling rumble removal; automatic leveling is optional. Peak protection avoids output clipping.
 
-Validation: `python -m scripts.check_cleanup` verifies measured synthetic noise attenuation, exact bypass, duration/rate/stereo retention, peak protection, source preservation, comparison playback handoff, export, cancellation and native layout.
-
-### Join clips
-
-Click **Join clips...** in Audio editor. Add WAV/FLAC/OGG/MP3 files, or **Add current edited selection** to capture the current trim, volume and fades. Repeat for additional sections; move clips up/down, remove them, or clear the list. Choose output rate and Mono/Stereo, plus an optional 0-10 second gap. **Preview joined clips** plays the sequence; **Save joined WAV** makes it the last saved edit. Export it from the Audio editor. Sources remain unchanged and protected against export overwrite.
-
-Joining supports 2-50 clips and up to one hour of output. Mono/stereo conversion uses the bundled audio library and can change channel amplitude. No crossfade or multitrack overlap is applied. Recreate subtitles for the joined output. Validation: `python -m scripts.check_join`.
+Input limit is one hour, mono/stereo at 8-192 kHz. Duration, sample rate, and channels are retained. Output is PCM16 WAV.
 
 ## Batch processing
 
-Open **Batch processing**, add up to 100 audio files, and choose **Cleanup**, **Convert**, or **Subtitles**. Click **Open operation settings**, adjust options in that tab, and return to start the batch. The run captures those settings once and processes the queue sequentially. Subtitles recognizes words in each file; saved-script alignment is not used.
+Queue up to 100 unique files, choose Cleanup/Convert/Subtitles, then **Open operation settings**. Adjust settings in that tab, return, and **Start batch**. The run takes a settings snapshot and processes files sequentially. Subtitles recognizes words per file; saved-script alignment is not used.
 
-Choose an optional output location; each run creates a new `batch-<id>` folder (default `data/batches`) with numbered output files, `batch-report.json` and a worker log. This avoids filename collisions and preserves originals. The report records settings, source paths, completed outputs and per-file errors. **Continue with remaining files if one file fails** is enabled by default. **Cancel batch** stops the current worker, discards its partial output and leaves completed results available. Open the last batch folder to retrieve files or review the report.
-
-Existing offline cleanup/conversion/subtitle runtimes are reused. Subtitle jobs reload the local Whisper model per file; processing is sequential, with no additional downloads. Other audio jobs and app closing are blocked during a batch. Review generated subtitle text and timings before use. Validation: `python -m scripts.check_batch`.
+Each run creates a new folder under `data/batches` or your chosen location, with numbered outputs, `batch-report.json`, and a worker log. Continue-on-error is optional. **Cancel batch** discards the current partial result and retains completed files. **Open last batch folder** retrieves results and errors. Subtitle jobs reload the local model per file. Batch resume, chained operations, and batch voice effects are not implemented.
 
 ## Voice effects
 
-Open **Voice effects** and import audio or use a recorded take, generated speech, or saved edit. Adjust **Speed** (0.5-2x), **Pitch** (-12 to +12 semitones), **Reverb** (0-100%) and optional **Radio-style voice**, then click **Apply voice effects**. Speed and pitch operate independently. Reverb adds a 0.6-second tail; radio uses a 300-3400 Hz band-pass and mild saturation. Peak protection lowers the whole result if needed.
+Import audio or use a recording, generated result, or saved edit. Set independent **Speed** (0.5-2x) and **Pitch** (-12 to +12 semitones), **Reverb**, and optional **Radio-style voice**. Click **Apply voice effects**, compare original/processed playback, and export a separate WAV. Reset restores normal settings; apply again to create a new result.
 
-Compare **Play original** and **Play with effects**, then **Export effects WAV...**. Playback/export use the last completed job. **Reset effects** restores normal speed/pitch and disables reverb/radio; apply again to produce a new result. Results are stored in `data/effects`; source files stay unchanged.
+Reverb adds a 0.6-second tail. Radio applies a narrow frequency range and mild saturation. Speed/reverb can change duration and require new subtitle timing. Extreme settings may sound artificial; this transforms audio rather than retraining or modifying a saved voice profile.
 
-Processing is offline using existing librosa/SciPy/PyAV dependencies. Inputs may be mono/stereo, up to ten minutes, at 8 kHz or higher; sample rates above 48 kHz are converted to 48 kHz. Output is PCM16 WAV. Extreme effects can sound artificial. Speed/reverb change timing, so recreate subtitles. This transforms audio; it does not change a cloned profile or train a new voice. Validation: `python -m scripts.check_effects`.
+Inputs are limited to **10 minutes**, mono/stereo at 8 kHz or higher. Rates above 48 kHz are converted to 48 kHz. Output is PCM16 WAV. Long speed/pitch jobs use CPU and additional RAM; cancellation is available.
+
+## Audio file information
+
+Use **Audio file information...** in the menu at the top of the app. Choose a file or select a loaded input/result. The window shows duration, format and codec/sample type, sample rate, channels, exact file size, and full path. **Copy information** copies those details.
+
+Inspection is read-only and uses local libraries, without loading a speech model. Compressed-file durations may include codec padding; the duration source is shown.
+
+## Storage and backups
+
+The app runs one processing job at a time. Close it before moving folders or copying active output files.
+
+- `data/profiles`: original/prepared reference recordings and voice metadata.
+- `data/settings.json`: saved preferences.
+- `data/outputs` and `data/jobs`: generated speech, sections, and job metadata.
+- `data/subtitles`: subtitle results.
+- `data/mixes`: background-music mixes and license/settings notes.
+- `data/recordings`: recorded takes.
+- `data/edits`: trimmed and joined WAVs.
+- `data/converted`, `data/cleaned`, and `data/effects`: processed results.
+- `data/batches`: default batch output folders and reports.
+- `models`: pinned Turbo, Qwen, and Whisper snapshots.
+
+Personal audio/data, models, runtimes, caches, outputs, and Markdown guides are ignored by Git. Guide filenames must contain `guide` (case-insensitive). Git does not back up these files; copy them separately. The detailed local implementation/verification record is in `IMPLEMENTATION_GUIDE.md`, which is intentionally untracked.
+
+## Technology and verification
+
+Python 3.11, Tkinter/ttk, isolated Turbo/Qwen runtimes, PyTorch, SoundFile, PyAV, NumPy/SciPy, librosa, sounddevice/PortAudio, and Faster-Whisper provide the local functionality. Dependency lockfiles and model-spec files pin the installed setup.
+
+The Windows reference system is an AMD Ryzen 9 6900HS, roughly 39 GB RAM, and RTX 3060 Laptop GPU with 6 GB VRAM. Both TTS models and subtitle CPU/GPU workflows have passed local checks. Other machines require their own performance/compatibility checks. Subjective voice resemblance and effect quality require listening.
+
+The existing automated suite has 24 tests. Feature acceptance scripts verify real codec round trips, microphone capture, subtitles, DSP behavior, source preservation, cancellation, export, and native layouts. Examples:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests
+.\.venv\Scripts\python.exe -m scripts.check_audio_info
+.\.venv\Scripts\python.exe -m scripts.check_recorder
+.\.venv\Scripts\python.exe -m scripts.check_editor
+.\.venv\Scripts\python.exe -m scripts.check_join
+.\.venv\Scripts\python.exe -m scripts.check_converter
+.\.venv\Scripts\python.exe -m scripts.check_cleanup
+.\.venv\Scripts\python.exe -m scripts.check_batch
+.\.venv\Scripts\python.exe -m scripts.check_effects
+```
+
+Some acceptance scripts capture a short microphone sample, play test audio, or require a previously generated speech file. Test recordings stay local.
+
+## Model and dependency licenses
+
+Third-party models/libraries retain their own licenses. Chatterbox Turbo is MIT licensed and its built-in PerTh watermarking is retained; Qwen3-TTS is Apache-2.0 licensed; the Whisper model specification records MIT licensing. Dependency license files are retained in the bundled runtimes.
+
+- [Chatterbox repository](https://github.com/resemble-ai/chatterbox)
+- [Chatterbox Turbo model](https://huggingface.co/ResembleAI/chatterbox-turbo)
+- [Qwen3-TTS repository](https://github.com/QwenLM/Qwen3-TTS)
+- [Qwen 1.7B Base model](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base)
+- [Faster-Whisper repository](https://github.com/SYSTRAN/faster-whisper)
+
+Design credit does not replace these third-party licenses or a music track's usage terms.
