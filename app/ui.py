@@ -20,7 +20,7 @@ from .generation import GENERATION_PRESETS
 class VoiceApp:
     def __init__(self, root: tk.Tk):
         self.root = root
-        root.title("Local Voice Studio")
+        root.title("Local Voice Studio | Designed & developed by Chima Lawrence Nnoromele")
         icon = Path(__file__).resolve().parent / "assets" / "local-voice-studio.ico"
         if icon.exists():
             root.iconbitmap(default=str(icon))

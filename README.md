@@ -2,7 +2,7 @@
 
 A personal Windows audio studio for local voice cloning, text-to-speech, recording, editing, subtitles, music mixing, cleanup, conversion, batch processing, and voice effects.
 
-**Designed by Chima Lawrence Nnoromele**
+**Designed & developed by Chima Lawrence Nnoromele**
 
 **Email:** [lawrence.nno@gmail.com](mailto:lawrence.nno@gmail.com)
 
