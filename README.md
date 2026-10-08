@@ -17,7 +17,7 @@ Audio processing and model inference run locally. Internet access is needed for 
 - **Audio to subtitles:** transcribe imported audio or align the saved script of generated speech; local Whisper Small, automatic/English language selection, CPU/GPU options, editable SRT text/timings, validation, and UTF-8 export.
 - **Background music:** import music, adjust voice/music volume, automatic ducking, music start position, optional looping, music fades, preview, peak protection, and mixed WAV export with license/credit notes.
 - **Voice recorder:** microphone selection/refresh, cancellable three-second countdown, level meter, recorded-time display, start/pause/resume/stop, separate WAV takes, playback/export, reference-cleanup handoff, and recording-to-subtitles shortcut.
-- **Audio editor:** waveform display with moving playback playhead, source playback, pause/resume/stop, Shift-click seeking, set cut boundaries at the playhead, drag selection, exact start/end times, trimming, volume, fades, selection preview, source-preserving WAV save/export, and reference handoff.
+- **Audio editor:** waveform display with moving playback playhead, source playback, pause/resume/stop, Shift-click seeking, set cut boundaries at the playhead, Undo/Redo for selection/volume/fade settings, drag selection, exact start/end times, trimming, volume, fades, selection preview, source-preserving WAV save/export, and reference handoff.
 - **Clip joining:** add whole files or edited selections, reorder/remove/clear clips, choose output rate/channels and optional gaps, preview, and save one joined WAV.
 - **Format converter:** WAV, MP3, FLAC, M4A/AAC, and OGG/Opus output; sample-rate/channel options, compressed bitrates, cancellation, and separate-file export.
 - **Audio cleanup:** adjustable steady-noise reduction, volume adjustment, automatic leveling, optional low-rumble removal, original/cleaned playback, peak protection, and cleaned WAV export.
@@ -30,6 +30,10 @@ Audio processing and model inference run locally. Internet access is needed for 
 ## Launch and transfer
 
 ### Waveform playback and precise cuts
+
+**Undo / Redo** buttons recover selection start/end, volume, fades and **Select all / reset** changes. Keyboard shortcuts in the editor are **Ctrl+Z** for Undo and **Ctrl+Y** or **Ctrl+Shift+Z** for Redo. Each waveform or volume-slider drag is one step; brief typing bursts are grouped and leaving a field commits its change. Up to 100 changes are retained in memory. A new edit after Undo clears the redo branch. Opening a source starts a fresh history; a failed open preserves the previous history.
+
+Undo/Redo stops playback and restores settings; preview or save again to hear the restored edit. It does not delete or roll back saved/exported files, change the playhead's seek history, or undo the separate Join clips queue. Export still uses the last saved WAV. History is unavailable during an active audio task and is not persisted after closing the app.
 
 In **Audio editor**, open a file and click **Play source**. The yellow playhead and time readout track playback on the original timeline. **Pause / Resume** holds and continues from that position; **Stop** returns the playhead to zero. **Shift-click** anywhere on the waveform to seek without changing the highlighted selection. Seeking switches to the original source, even after a processed selection preview.
 

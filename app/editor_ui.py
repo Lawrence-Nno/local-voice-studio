@@ -30,6 +30,12 @@ class EditorPanel:
         self.fade_in = tk.StringVar(value='0')
         self.fade_out = tk.StringVar(value='0')
         self.gain = tk.DoubleVar(value=1)
+        from .edit_history import EditHistory
+        self.history = EditHistory()
+        self.history_timer = None
+        self.history_muted = False
+        self.history_gesture = False
+        self.history_variables = (self.start_time, self.end_time, self.fade_in, self.fade_out, self.gain)
         self.status = tk.StringVar(value='Open audio or use a take from Voice recorder. Edits are saved as new files.')
         self.source_label = tk.StringVar(value='No audio selected')
         self.selection_label = tk.StringVar(value='Drag across the waveform to select a section.')
@@ -44,13 +50,17 @@ class EditorPanel:
             button = ttk.Button(row, text=title, command=command)
             button.pack(side='left', padx=(0, 8))
             self.controls.append(button)
+        self.redo_button = ttk.Button(row, text='Redo', command=lambda: self.restore_history(False), state='disabled')
+        self.redo_button.pack(side='right')
+        self.undo_button = ttk.Button(row, text='Undo', command=lambda: self.restore_history(True), state='disabled')
+        self.undo_button.pack(side='right', padx=5)
         ttk.Label(frame, textvariable=self.source_label, wraplength=820).pack(anchor='w', pady=10)
         self.canvas = tk.Canvas(frame, height=140, background='#10233f', highlightthickness=0)
         self.canvas.pack(fill='x')
         self.canvas.bind('<Configure>', lambda _: self.draw())
         self.canvas.bind('<Button-1>', self.drag_start)
         self.canvas.bind('<B1-Motion>', self.drag)
-        self.canvas.bind('<ButtonRelease-1>', self.drag)
+        self.canvas.bind('<ButtonRelease-1>', self.drag_end)
         self.canvas.bind('<Shift-Button-1>', self.seek_waveform)
         playback_row = ttk.Frame(frame)
         playback_row.pack(fill='x', pady=4)
@@ -71,11 +81,14 @@ class EditorPanel:
             entry = ttk.Entry(settings, textvariable=variable, width=12)
             entry.grid(row=index // 2, column=column + 1, sticky='w', padx=(0, 20))
             self.controls.append(entry)
+            entry.bind('<FocusOut>', lambda _: self.flush_history())
         self.volume_label = tk.StringVar()
         ttk.Label(settings, textvariable=self.volume_label).grid(row=2, column=0, sticky='w', pady=6)
         volume = ttk.Scale(settings, from_=0, to=2, variable=self.gain)
         volume.grid(row=2, column=1, columnspan=3, sticky='ew')
         self.controls.append(volume)
+        volume.bind('<ButtonPress-1>', lambda _: self.begin_history_gesture())
+        volume.bind('<ButtonRelease-1>', lambda _: self.end_history_gesture())
         self.gain.trace_add('write', lambda *_: self.volume_label.set(f'Volume: {self.gain.get():.0%}'))
         self.volume_label.set('Volume: 100%')
         for variable in (self.start_time, self.end_time):
@@ -103,7 +116,71 @@ class EditorPanel:
         label = ttk.Label(frame, textvariable=self.status, wraplength=820)
         label.pack(fill='x')
         label.bind('<Configure>', lambda e: label.configure(wraplength=max(100, e.width)))
+        for variable in self.history_variables:
+            variable.trace_add('write', self.settings_changed)
+        for sequence, undo in (('<Control-z>', True), ('<Control-y>', False), ('<Control-Shift-Z>', False)):
+            app.root.bind(sequence, lambda event, undo=undo: self.history_shortcut(event, undo), add='+')
         app.root.after(100, self.poll)
+
+    def history_state(self):
+        # Keep text exactly, including intermediate invalid input, so Undo can recover it.
+        return tuple(str(variable.get()) for variable in self.history_variables)
+
+    def settings_changed(self, *_):
+        if self.history_muted or self.history_gesture or not self.info:
+            return
+        if self.history_timer:
+            self.app.root.after_cancel(self.history_timer)
+        self.history_timer = self.app.root.after(450, self.flush_history)
+        self.refresh_history_buttons()
+
+    def flush_history(self):
+        if self.history_timer:
+            self.app.root.after_cancel(self.history_timer)
+            self.history_timer = None
+        if self.info and not self.history_muted and not self.history_gesture:
+            self.history.record(self.history_state())
+        self.refresh_history_buttons()
+
+    def begin_history_gesture(self):
+        self.flush_history()
+        self.history_gesture = True
+
+    def end_history_gesture(self):
+        self.history_gesture = False
+        self.flush_history()
+
+    def refresh_history_buttons(self):
+        available = self.info is not None and not self.occupied() and not self.history_gesture
+        pending = self.info is not None and self.history.current != self.history_state()
+        self.undo_button.configure(state='normal' if available and (self.history.past or pending) else 'disabled')
+        self.redo_button.configure(state='normal' if available and self.history.future and not pending else 'disabled')
+
+    def restore_history(self, undo):
+        if not self.info or self.occupied() or self.history_gesture:
+            return
+        self.flush_history()
+        if not (self.history.past if undo else self.history.future):
+            return
+        self.stop_playback()
+        state = self.history.undo() if undo else self.history.redo()
+        self.history_muted = True
+        try:
+            for variable, value in zip(self.history_variables, state):
+                variable.set(value)
+        finally:
+            self.history_muted = False
+        self.draw()
+        self.refresh_history_buttons()
+        self.status.set(('Undid' if undo else 'Redid') + ' editor settings. Preview or save again to apply them; saved audio is unchanged.')
+
+    def history_shortcut(self, event, undo):
+        widget = event.widget
+        if widget.winfo_toplevel() != self.app.root:
+            return
+        if self.app.notebook.index('current') == 4:
+            self.restore_history(undo)
+            return 'break'
 
     def play_source(self):
         if not self.source or self.occupied():
@@ -161,7 +238,9 @@ class EditorPanel:
             other = float(self.end_time.get() if start else self.start_time.get())
             if (start and position >= other) or (not start and position <= other):
                 raise ValueError('Start must be before end. Seek to a point inside the desired range.')
+            self.flush_history()
             (self.start_time if start else self.end_time).set(f'{position:.6f}')
+            self.flush_history()
         except ValueError as exc:
             messagebox.showerror('Invalid selection boundary', str(exc))
 
@@ -213,6 +292,7 @@ class EditorPanel:
             messagebox.showinfo('Audio task running', 'Finish the active audio task first.')
             return
         self.app.editor_running = True
+        self.end_history_gesture()
         self.stop_playback()
         self.app.busy(False)
         for control in self.controls:
@@ -252,11 +332,13 @@ class EditorPanel:
 
     def reset(self):
         if self.info:
+            self.begin_history_gesture()
             self.start_time.set('0')
             self.end_time.set(f"{self.info['duration']:.6f}")
             self.fade_in.set('0')
             self.fade_out.set('0')
             self.gain.set(1)
+            self.end_history_gesture()
 
     def draw(self):
         self.canvas.delete('all')
@@ -287,14 +369,21 @@ class EditorPanel:
         return max(0, min(1, event.x / max(1, self.canvas.winfo_width()))) * self.info['duration']
 
     def drag_start(self, event):
-        if self.info and not self.app.editor_running:
+        if self.info and not self.occupied():
+            self.begin_history_gesture()
             self.anchor = self.position(event)
 
     def drag(self, event):
-        if self.info and hasattr(self, 'anchor') and not self.app.editor_running:
+        if self.info and hasattr(self, 'anchor') and not self.occupied():
             position = self.position(event)
             self.start_time.set(f'{min(position, self.anchor):.6f}')
             self.end_time.set(f'{max(position, self.anchor):.6f}')
+
+    def drag_end(self, event):
+        if hasattr(self, 'anchor'):
+            self.drag(event)
+            del self.anchor
+            self.end_history_gesture()
 
     def render(self, preview):
         if not self.source:
@@ -327,9 +416,13 @@ class EditorPanel:
                 self.status.set('Edit failed. Your source and last saved edit are unchanged.')
                 messagebox.showerror('Audio editor', result)
             elif result[0] == 'loaded':
+                self.flush_history()
+                self.history_muted = True
                 _, self.source, self.info = result
                 self.source_label.set(f"{self.source.name} | {self.info['duration']:.2f}s | {self.info['rate']} Hz | {self.info['channels']} channel(s)")
                 self.reset()
+                self.history_muted = False
+                self.history.reset(self.history_state())
                 self.status.set('Audio loaded. Drag across the waveform or enter start and end times.')
             else:
                 action, path, source, info = result
@@ -363,6 +456,7 @@ class EditorPanel:
             self.stop_playback()
             self.status.set('Playback failed: ' + str(exc))
         self.app.root.after(50, self.poll)
+        self.refresh_history_buttons()
 
     def export(self):
         filename = filedialog.asksaveasfilename(title='Export last saved edit', defaultextension='.wav', initialfile='edited-audio.wav', filetypes=[('WAV audio', '*.wav')])
