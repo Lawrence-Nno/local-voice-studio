@@ -21,7 +21,7 @@ Audio processing and model inference run locally. Internet access is needed for 
 - **Format converter:** WAV, MP3, FLAC, M4A/AAC, and OGG/Opus output; sample-rate/channel options, compressed bitrates, cancellation, and separate-file export.
 - **Audio cleanup:** adjustable steady-noise reduction, volume adjustment, automatic leveling, optional low-rumble removal, original/cleaned playback, peak protection, and cleaned WAV export.
 - **Batch processing:** queue multiple files for cleanup, conversion, or transcription; settings snapshots, per-file status, optional continuation after errors, cancellation retaining completed files, and a run report.
-- **Voice effects:** independent speed/pitch adjustment, room reverb, optional radio-style filtering/saturation, reset, original/processed playback, cancellation, and WAV export.
+- **Voice effects:** independent speed/pitch adjustment, room reverb, optional radio-style filtering/saturation, named starter/custom presets, reset, original/processed playback, cancellation, and WAV export.
 - **Audio file information:** inspect duration, format/codec, sample rate, channels, file size, and full path; select a local file or loaded input/result and copy details to the clipboard.
 - **Portable Windows launch:** native EXE, custom application icon, bundled runtimes/models, and a desktop-shortcut creator.
 
@@ -127,6 +127,14 @@ Reverb adds a 0.6-second tail. Radio applies a narrow frequency range and mild s
 
 Inputs are limited to **10 minutes**, mono/stereo at 8 kHz or higher. Rates above 48 kHz are converted to 48 kHz. Output is PCM16 WAV. Long speed/pitch jobs use CPU and additional RAM; cancellation is available.
 
+### Effects presets
+
+Click **Effects presets...** in Voice effects. Select **Normal voice**, **Subtle reverb**, **Slightly faster narration**, or **Radio voice** and click **Load selected**. Loading changes the effect controls only; click **Apply voice effects** to process audio.
+
+Adjust the controls and choose **Save current as...** to name your own preset. **Update selected** replaces a custom preset with the current controls. **Delete selected** removes a custom preset without changing the controls or audio. Starter presets cannot be overwritten or deleted. Names are unique regardless of letter case.
+
+Custom presets persist locally in `data/effects-presets.json` and travel with the entire portable folder. Project and portable copies have separate preset files. Portable updates preserve existing presets; personal rebuilds using `--include-profiles` also include source-copy presets when present. A corrupt preset file is preserved for recovery rather than silently replaced.
+
 ## Audio file information
 
 Use **Audio file information...** in the menu at the top of the app. Choose a file or select a loaded input/result. The window shows duration, format and codec/sample type, sample rate, channels, exact file size, and full path. **Copy information** copies those details.
@@ -139,6 +147,7 @@ The app runs one processing job at a time. Close it before moving folders or cop
 
 - `data/profiles`: original/prepared reference recordings and voice metadata.
 - `data/settings.json`: saved preferences.
+- `data/effects-presets.json`: your named voice-effect settings.
 - `data/outputs` and `data/jobs`: generated speech, sections, and job metadata.
 - `data/subtitles`: subtitle results.
 - `data/mixes`: background-music mixes and license/settings notes.
@@ -156,7 +165,7 @@ Python 3.11, Tkinter/ttk, isolated Turbo/Qwen runtimes, PyTorch, SoundFile, PyAV
 
 The Windows reference system is an AMD Ryzen 9 6900HS, roughly 39 GB RAM, and RTX 3060 Laptop GPU with 6 GB VRAM. Both TTS models and subtitle CPU/GPU workflows have passed local checks. Other machines require their own performance/compatibility checks. Subjective voice resemblance and effect quality require listening.
 
-The existing automated suite has 24 tests. Feature acceptance scripts verify real codec round trips, microphone capture, subtitles, DSP behavior, source preservation, cancellation, export, and native layouts. Examples:
+The existing automated suite has 27 tests. Feature acceptance scripts verify real codec round trips, microphone capture, subtitles, DSP behavior, preset persistence, source preservation, cancellation, export, and native layouts. Examples:
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests
@@ -168,6 +177,7 @@ The existing automated suite has 24 tests. Feature acceptance scripts verify rea
 .\.venv\Scripts\python.exe -m scripts.check_cleanup
 .\.venv\Scripts\python.exe -m scripts.check_batch
 .\.venv\Scripts\python.exe -m scripts.check_effects
+.\.venv\Scripts\python.exe -m scripts.check_effects_presets
 ```
 
 Some acceptance scripts capture a short microphone sample, play test audio, or require a previously generated speech file. Test recordings stay local.

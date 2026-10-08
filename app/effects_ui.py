@@ -6,6 +6,7 @@ from tkinter import messagebox,ttk
 
 from .converter_ui import ConverterPanel
 from .cleanup_ui import CleanupPanel
+from .effects_presets import EffectsPresets
 
 
 class EffectsPanel(ConverterPanel):
@@ -23,6 +24,13 @@ class EffectsPanel(ConverterPanel):
         self.pitch=tk.DoubleVar(value=0)
         self.reverb=tk.DoubleVar(value=0)
         self.radio=tk.BooleanVar(value=False)
+        self.preset_dialog=None
+        self.preset_error=None
+        try:
+            self.preset_store=EffectsPresets()
+        except (ValueError,OSError) as exc:
+            self.preset_store=None
+            self.preset_error=str(exc)
         self.controls=[]
         self.choices=[]
         frame=ttk.Frame(parent,padding=16)
@@ -57,9 +65,14 @@ class EffectsPanel(ConverterPanel):
         check=ttk.Checkbutton(settings,text='Radio-style voice (narrow frequency range and mild saturation)',variable=self.radio)
         check.pack(anchor='w',pady=4)
         self.controls.append(check)
-        button=ttk.Button(settings,text='Reset effects',command=self.reset)
-        button.pack(anchor='w',pady=4)
+        preset_row=ttk.Frame(settings)
+        preset_row.pack(fill='x',pady=4)
+        button=ttk.Button(preset_row,text='Reset effects',command=self.reset)
+        button.pack(side='left')
         self.controls.append(button)
+        self.presets_button=ttk.Button(preset_row,text='Effects presets...',command=self.open_presets)
+        self.presets_button.pack(side='left',padx=8)
+        self.controls.append(self.presets_button)
         ttk.Label(frame,text='Speed and pitch work independently. Reverb adds a 0.6-second tail.\nSpeed changes or reverb require new subtitle timings. Extreme settings may sound less natural.\nUse clips up to ten minutes. Mono/stereo is retained; rates above 48 kHz are converted to 48 kHz.',wraplength=820).pack(anchor='w',pady=8)
         row=ttk.Frame(frame)
         row.pack(fill='x',pady=8)
@@ -86,6 +99,13 @@ class EffectsPanel(ConverterPanel):
 
     def update_options(self):
         pass
+
+    def open_presets(self):
+        if self.preset_dialog and self.preset_dialog.winfo_exists():
+            self.preset_dialog.lift()
+            return
+        from .effects_presets_ui import PresetsDialog
+        self.preset_dialog=PresetsDialog(self)
 
     def reset(self):
         self.speed.set(1)

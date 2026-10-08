@@ -32,7 +32,7 @@ def main():
     print("Bundling app and model weights", flush=True)
     shutil.copytree(ROOT / "app", target / "app", ignore=ignore)
     (target / "scripts").mkdir()
-    for name in ("__init__.py", "check_qwen.py", "check_subtitles.py", "check_music.py", "check_recorder.py", "check_editor.py", "check_recording_subtitles.py", "check_converter.py", "check_cleanup.py", "check_join.py", "check_batch.py", "check_effects.py", "check_audio_info.py", "check_countdown.py"):
+    for name in ("__init__.py", "check_qwen.py", "check_subtitles.py", "check_music.py", "check_recorder.py", "check_editor.py", "check_recording_subtitles.py", "check_converter.py", "check_cleanup.py", "check_join.py", "check_batch.py", "check_effects.py", "check_audio_info.py", "check_countdown.py", "check_effects_presets.py"):
         source = ROOT / "scripts" / name
         if source.exists():
             shutil.copy2(source, target / "scripts" / name)
@@ -42,6 +42,8 @@ def main():
         print("Copying your saved voice profiles and preferences", flush=True)
         shutil.copytree(ROOT / "data" / "profiles", target / "data" / "profiles", ignore=ignore)
         shutil.copy2(ROOT / "data" / "settings.json", target / "data" / "settings.json")
+        if (ROOT / "data" / "effects-presets.json").is_file():
+            shutil.copy2(ROOT / "data" / "effects-presets.json", target / "data" / "effects-presets.json")
     for name in ("model-spec.json", "qwen-model-spec.json", "requirements-lock.txt", "requirements-qwen-lock.txt", "subtitle-model-spec.json"):
         shutil.copy2(ROOT / name, target / name)
     shutil.copy2(ROOT / "packaging" / "Create desktop shortcut.ps1", target)
