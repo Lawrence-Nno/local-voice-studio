@@ -30,6 +30,9 @@ class QwenEngine:
 
     def load(self, requested, progress):
         interpreter = ROOT / ".venv-qwen" / "Scripts" / "python.exe"
+        portable = ROOT / "runtime" / "qwen" / "python.exe"
+        if portable.is_file():
+            interpreter = portable
         if not interpreter.is_file() or not (self.directory / "manifest.json").is_file():
             raise ValueError("Qwen is not installed. Run setup-qwen.ps1 while online.")
         import torch
