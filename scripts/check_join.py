@@ -91,6 +91,7 @@ def ui():
     assert editor.output==saved
     root.update()
     for widget in dialog.buttons:
+        assert widget.winfo_ismapped(), 'A join control is hidden'
         assert widget.winfo_rootx()+widget.winfo_width()<=dialog.winfo_rootx()+dialog.winfo_width()
         assert widget.winfo_rooty()+widget.winfo_height()<=dialog.winfo_rooty()+dialog.winfo_height()
     ImageGrab.grab(bbox=(dialog.winfo_rootx(),dialog.winfo_rooty(),dialog.winfo_rootx()+dialog.winfo_width(),dialog.winfo_rooty()+dialog.winfo_height())).save(DATA/'join-ui-preview.png')

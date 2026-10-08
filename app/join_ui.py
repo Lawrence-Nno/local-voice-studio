@@ -13,8 +13,11 @@ class JoinDialog(tk.Toplevel):
         self.editor=editor
         self.clips=[]
         self.title('Join audio clips')
-        self.geometry('780x550')
-        self.minsize(740,520)
+        scale=max(1,self.winfo_fpixels('1i')/96)
+        width=min(round(780*scale),self.winfo_screenwidth()-80)
+        height=min(round(620*scale),self.winfo_screenheight()-120)
+        self.geometry(f'{width}x{height}')
+        self.minsize(width,height)
         self.rate=tk.StringVar(value='44100')
         self.channels=tk.StringVar(value='Stereo')
         self.gap=tk.StringVar(value='0')
