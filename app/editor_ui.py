@@ -19,6 +19,11 @@ class EditorPanel:
         self.output_sources = ()
         self.join_dialog = None
         self.info = None
+        from .waveform_playback import WaveformPlayback
+        self.playback = WaveformPlayback()
+        self.playhead_time = 0.0
+        self.preview_start = 0.0
+        self.playback_label = tk.StringVar(value='Playhead: 0.000s')
         self.events = queue.Queue()
         self.start_time = tk.StringVar(value='0')
         self.end_time = tk.StringVar(value='0')
@@ -40,13 +45,24 @@ class EditorPanel:
             button.pack(side='left', padx=(0, 8))
             self.controls.append(button)
         ttk.Label(frame, textvariable=self.source_label, wraplength=820).pack(anchor='w', pady=10)
-        self.canvas = tk.Canvas(frame, height=170, background='#10233f', highlightthickness=0)
+        self.canvas = tk.Canvas(frame, height=140, background='#10233f', highlightthickness=0)
         self.canvas.pack(fill='x')
         self.canvas.bind('<Configure>', lambda _: self.draw())
         self.canvas.bind('<Button-1>', self.drag_start)
         self.canvas.bind('<B1-Motion>', self.drag)
         self.canvas.bind('<ButtonRelease-1>', self.drag)
-        ttk.Label(frame, textvariable=self.selection_label).pack(anchor='w', pady=6)
+        self.canvas.bind('<Shift-Button-1>', self.seek_waveform)
+        playback_row = ttk.Frame(frame)
+        playback_row.pack(fill='x', pady=4)
+        self.play_button = ttk.Button(playback_row, text='Play source', command=self.play_source)
+        self.play_button.pack(side='left')
+        self.pause_button = ttk.Button(playback_row, text='Pause', command=self.pause_playback)
+        self.pause_button.pack(side='left', padx=5)
+        ttk.Button(playback_row, text='Stop', command=self.stop_playback).pack(side='left')
+        ttk.Button(playback_row, text='Set start here', command=lambda: self.set_boundary(True)).pack(side='left', padx=5)
+        ttk.Button(playback_row, text='Set end here', command=lambda: self.set_boundary(False)).pack(side='left')
+        ttk.Label(playback_row, textvariable=self.playback_label).pack(side='right')
+        ttk.Label(frame, textvariable=self.selection_label).pack(anchor='w', pady=3)
         settings = ttk.LabelFrame(frame, text='Selection and finishing', padding=10)
         settings.pack(fill='x', pady=8)
         for index, (title, variable) in enumerate((('Start (seconds)', self.start_time), ('End (seconds)', self.end_time), ('Fade in (seconds)', self.fade_in), ('Fade out (seconds)', self.fade_out))):
@@ -70,7 +86,6 @@ class EditorPanel:
             button = ttk.Button(row, text=title, command=command)
             button.pack(side='left', padx=(0, 8))
             self.controls.append(button)
-        ttk.Button(row, text='Stop playback', command=lambda: winsound.PlaySound(None, 0)).pack(side='left')
         row = ttk.Frame(frame)
         row.pack(fill='x', pady=8)
         self.export_button = ttk.Button(row, text='Export saved edit...', command=self.export, state='disabled')
@@ -82,13 +97,83 @@ class EditorPanel:
         self.controls.append(self.join_button)
         from .audio_shortcuts import AudioShortcuts
         self.shortcuts = AudioShortcuts(app, self, row, 'Send saved edit to...')
-        ttk.Label(frame, text='The highlighted section is kept; audio outside it is removed. Preview includes your volume and fades.\nSaving preserves the source sample rate and channels. Export uses the last saved edit; changed settings require saving again.', wraplength=820).pack(anchor='w', pady=8)
+        ttk.Label(frame, text='Drag to select; Shift-click to seek. Play source ignores finishing settings; Preview selection includes volume/fades.\nThe highlight is kept. Saving preserves the source; export uses the last saved edit.', wraplength=820).pack(anchor='w', pady=6)
         self.progress = ttk.Progressbar(frame, mode='indeterminate')
         self.progress.pack(fill='x', pady=6)
         label = ttk.Label(frame, textvariable=self.status, wraplength=820)
         label.pack(fill='x')
         label.bind('<Configure>', lambda e: label.configure(wraplength=max(100, e.width)))
         app.root.after(100, self.poll)
+
+    def play_source(self):
+        if not self.source or self.occupied():
+            return
+        winsound.PlaySound(None, 0)
+        try:
+            position = self.playhead_time if self.info and self.playhead_time < self.info['duration'] else 0
+            self.playback.start(self.source, position=position)
+        except Exception as exc:
+            messagebox.showerror('Playback failed', str(exc))
+
+    def pause_playback(self):
+        try:
+            if self.playback.playing:
+                self.playback.pause()
+            elif self.playback.path and not self.occupied():
+                self.playback.resume()
+        except Exception as exc:
+            messagebox.showerror('Playback failed', str(exc))
+
+    def stop_playback(self):
+        self.playback.stop()
+        winsound.PlaySound(None, 0)
+        self.playhead_time = 0.0
+        self.draw_playhead()
+        if self.info:
+            self.status.set('Playback stopped. Shift-click to seek or drag to select.')
+
+    def seek_waveform(self, event):
+        if self.info and not self.occupied():
+            position = self.position(event)
+            try:
+                # Seeking the waveform always switches back to the original source timeline.
+                if self.playback.playing:
+                    self.playback.start(self.source, position=position)
+                else:
+                    self.playback.stop()
+                    self.playback.path = self.source
+                    self.playback.offset = 0
+                    self.playback.rate = self.info['rate']
+                    self.playback.frames = round(self.info['duration'] * self.info['rate'])
+                    self.playback.cursor = position
+                self.playhead_time = position
+                self.draw_playhead()
+            except Exception as exc:
+                messagebox.showerror('Playback failed', str(exc))
+        return 'break'
+
+    def set_boundary(self, start):
+        if not self.info or self.occupied():
+            return
+        current = self.playback.offset + self.playback.position if self.playback.path else self.playhead_time
+        position = min(self.info['duration'], max(0, current))
+        try:
+            other = float(self.end_time.get() if start else self.start_time.get())
+            if (start and position >= other) or (not start and position <= other):
+                raise ValueError('Start must be before end. Seek to a point inside the desired range.')
+            (self.start_time if start else self.end_time).set(f'{position:.6f}')
+        except ValueError as exc:
+            messagebox.showerror('Invalid selection boundary', str(exc))
+
+    def draw_playhead(self):
+        self.canvas.delete('playhead')
+        if self.info:
+            x = self.canvas.winfo_width() * self.playhead_time / self.info['duration']
+            self.canvas.create_line(x, 0, x, self.canvas.winfo_height(), fill='#ffcc66', width=2, tags='playhead')
+        self.playback_label.set(f'Playhead: {self.playhead_time:.3f}s')
+        self.pause_button.configure(text='Pause' if self.playback.playing else 'Resume')
+        self.pause_button.configure(state='normal' if self.playback.path and not self.occupied() else 'disabled')
+        self.play_button.configure(state='normal' if self.source and not self.occupied() else 'disabled')
 
     def occupied(self):
         return self.app.batch_running or self.app.conversion_running or self.app.editor_running or self.app.recording_running or self.app.subtitle_running or self.app.mix_running or (self.app.worker and self.app.worker.is_alive())
@@ -128,6 +213,7 @@ class EditorPanel:
             messagebox.showinfo('Audio task running', 'Finish the active audio task first.')
             return
         self.app.editor_running = True
+        self.stop_playback()
         self.app.busy(False)
         for control in self.controls:
             control.configure(state='disabled')
@@ -195,6 +281,7 @@ class EditorPanel:
         self.canvas.create_line(0, height/2, width, height/2, fill='#6683a3')
         self.canvas.create_text(8, height-12, anchor='w', text='0.00s', fill='#c4d8f1')
         self.canvas.create_text(width-8, height-12, anchor='e', text=f'{duration:.2f}s', fill='#c4d8f1')
+        self.draw_playhead()
 
     def position(self, event):
         return max(0, min(1, event.x / max(1, self.canvas.winfo_width()))) * self.info['duration']
@@ -219,6 +306,7 @@ class EditorPanel:
             messagebox.showerror('Invalid settings', 'Enter numbers for all edit settings.')
             return
         source = self.source
+        self.preview_start = values[0]
         directory = DATA / ('editor-previews' if preview else 'edits')
         path = directory / (uuid.uuid4().hex + '.wav')
         winsound.PlaySound(None, 0)
@@ -248,8 +336,11 @@ class EditorPanel:
                 self.status.set(('Playing joined clips.' if action == 'join_preview' else 'Playing selection.' if action == 'preview' else 'Saved joined WAV: ' + path.name if action == 'joined' else 'Saved edit: ' + path.name) + (' Volume reached clipping; lower it and save again.' if info['clipped'] else ''))
                 if action in ('preview', 'join_preview'):
                     try:
-                        winsound.PlaySound(str(path), winsound.SND_FILENAME | winsound.SND_ASYNC)
-                    except RuntimeError as exc:
+                        if action == 'preview':
+                            self.playback.start(path, offset=self.preview_start)
+                        else:
+                            winsound.PlaySound(str(path), winsound.SND_FILENAME | winsound.SND_ASYNC)
+                    except Exception as exc:
                         messagebox.showerror('Playback failed', str(exc))
                 else:
                     self.output = path
@@ -257,7 +348,21 @@ class EditorPanel:
                     self.output_source = self.output_sources[0]
             for button in (self.export_button, self.reference_button):
                 button.configure(state='normal' if self.output else 'disabled')
-        self.app.root.after(100, self.poll)
+        try:
+            was_playing = self.playback.playing
+            self.playback.refresh()
+            if was_playing and not self.playback.playing and not self.playback.error:
+                self.status.set('Playback finished. Shift-click to seek or Play source to listen again.')
+            if self.playback.path:
+                self.playhead_time = self.playback.offset + self.playback.position
+            self.draw_playhead()
+            if self.playback.error:
+                self.status.set('Playback failed: ' + self.playback.error)
+                self.playback.error = None
+        except Exception as exc:
+            self.stop_playback()
+            self.status.set('Playback failed: ' + str(exc))
+        self.app.root.after(50, self.poll)
 
     def export(self):
         filename = filedialog.asksaveasfilename(title='Export last saved edit', defaultextension='.wav', initialfile='edited-audio.wav', filetypes=[('WAV audio', '*.wav')])

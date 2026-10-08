@@ -99,6 +99,7 @@ class VoiceApp:
         from .effects_ui import EffectsPanel
         self.effects_panel = EffectsPanel(self, effects_tab)
         self.notebook = notebook
+        notebook.bind('<<NotebookTabChanged>>', lambda _: self.editor_panel.stop_playback() if notebook.index('current') != 4 else None, add='+')
         menu = tk.Menu(root)
         menu.add_command(label="Audio file information...", command=self.open_audio_info)
         menu.add_command(label="Pronunciation dictionary...", command=self.open_pronunciation)
@@ -448,4 +449,5 @@ class VoiceApp:
             return
         winsound.PlaySound(None, 0)
         self.engine.unload()
+        self.editor_panel.stop_playback()
         self.root.destroy()
