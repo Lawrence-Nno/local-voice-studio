@@ -249,3 +249,11 @@ Open **Batch processing**, add up to 100 audio files, and choose **Cleanup**, **
 Choose an optional output location; each run creates a new `batch-<id>` folder (default `data/batches`) with numbered output files, `batch-report.json` and a worker log. This avoids filename collisions and preserves originals. The report records settings, source paths, completed outputs and per-file errors. **Continue with remaining files if one file fails** is enabled by default. **Cancel batch** stops the current worker, discards its partial output and leaves completed results available. Open the last batch folder to retrieve files or review the report.
 
 Existing offline cleanup/conversion/subtitle runtimes are reused. Subtitle jobs reload the local Whisper model per file; processing is sequential, with no additional downloads. Other audio jobs and app closing are blocked during a batch. Review generated subtitle text and timings before use. Validation: `python -m scripts.check_batch`.
+
+## Voice effects
+
+Open **Voice effects** and import audio or use a recorded take, generated speech, or saved edit. Adjust **Speed** (0.5-2x), **Pitch** (-12 to +12 semitones), **Reverb** (0-100%) and optional **Radio-style voice**, then click **Apply voice effects**. Speed and pitch operate independently. Reverb adds a 0.6-second tail; radio uses a 300-3400 Hz band-pass and mild saturation. Peak protection lowers the whole result if needed.
+
+Compare **Play original** and **Play with effects**, then **Export effects WAV...**. Playback/export use the last completed job. **Reset effects** restores normal speed/pitch and disables reverb/radio; apply again to produce a new result. Results are stored in `data/effects`; source files stay unchanged.
+
+Processing is offline using existing librosa/SciPy/PyAV dependencies. Inputs may be mono/stereo, up to five minutes, at 8 kHz or higher; sample rates above 48 kHz are converted to 48 kHz. Output is PCM16 WAV. Extreme effects can sound artificial. Speed/reverb change timing, so recreate subtitles. This transforms audio; it does not change a cloned profile or train a new voice. Validation: `python -m scripts.check_effects`.

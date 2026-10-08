@@ -79,6 +79,8 @@ class VoiceApp:
         notebook.add(cleanup_tab, text="Audio cleanup")
         batch_tab = ttk.Frame(notebook)
         notebook.add(batch_tab, text="Batch processing")
+        effects_tab = ttk.Frame(notebook)
+        notebook.add(effects_tab, text="Voice effects")
         build_interface(self, speech_tab)
         from .subtitle_ui import SubtitlePanel
         self.subtitles = SubtitlePanel(self, subtitle_tab)
@@ -94,6 +96,8 @@ class VoiceApp:
         self.cleanup_panel = CleanupPanel(self, cleanup_tab)
         from .batch_ui import BatchPanel
         self.batch_panel = BatchPanel(self, batch_tab)
+        from .effects_ui import EffectsPanel
+        self.effects_panel = EffectsPanel(self, effects_tab)
         self.notebook = notebook
         self.refresh_profiles()
         self.select_model()
