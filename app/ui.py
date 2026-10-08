@@ -34,6 +34,7 @@ class VoiceApp:
         self.worker = None
         self.subtitle_running = False
         self.mix_running = False
+        self.recording_running = False
         self.output = None
         self.polished_output = None
         self.engine = SpeechEngine()
@@ -62,14 +63,18 @@ class VoiceApp:
         speech_tab = ttk.Frame(notebook)
         subtitle_tab = ttk.Frame(notebook)
         music_tab = ttk.Frame(notebook)
+        recording_tab = ttk.Frame(notebook)
         notebook.add(speech_tab, text="Text to speech")
         notebook.add(subtitle_tab, text="Audio to subtitles")
         notebook.add(music_tab, text="Background music")
+        notebook.add(recording_tab, text="Voice recorder")
         build_interface(self, speech_tab)
         from .subtitle_ui import SubtitlePanel
         self.subtitles = SubtitlePanel(self, subtitle_tab)
         from .music_ui import MusicPanel
         self.music_panel = MusicPanel(self, music_tab)
+        from .recorder_ui import RecorderPanel
+        self.recorder_panel = RecorderPanel(self, recording_tab)
         self.notebook = notebook
         self.refresh_profiles()
         self.select_model()
@@ -152,12 +157,12 @@ class VoiceApp:
             except (OSError, ValueError) as exc:
                 messagebox.showerror("Cannot save selection", str(exc))
 
-    def import_voice(self, replace=False):
+    def import_voice(self, replace=False, source=None):
         previous = self.current_profile() if replace else None
         if replace and previous is None:
             messagebox.showinfo("Select a voice", "Add a recording first.")
             return
-        filename = filedialog.askopenfilename(title="Choose your reference WAV", filetypes=[("WAV audio", "*.wav")])
+        filename = str(source) if source else filedialog.askopenfilename(title="Choose your reference WAV", filetypes=[("WAV audio", "*.wav")])
         if not filename:
             return
         name = simpledialog.askstring("Voice name", "Name this voice or speaking style:",
@@ -201,7 +206,7 @@ class VoiceApp:
             messagebox.showerror("Cannot clean reference", str(exc))
 
     def busy(self, active):
-        active = active or self.subtitle_running or self.mix_running
+        active = active or self.subtitle_running or self.mix_running or self.recording_running
         for control in (self.generate_button, self.test_button, self.add_button, self.replace_button,
                         self.cleanup_button, self.seed_entry, self.strength_slider, self.transcript_button):
             control.configure(state="disabled" if active else "normal")
@@ -213,7 +218,7 @@ class VoiceApp:
             self.update_model_controls()
 
     def generate(self, generic=False):
-        if (self.worker and self.worker.is_alive()) or self.subtitles.active() or self.mix_running:
+        if (self.worker and self.worker.is_alive()) or self.subtitles.active() or self.mix_running or self.recording_running:
             return
         if generic and self.model_choice.get() != "Chatterbox Turbo":
             messagebox.showinfo("Reference required", "Qwen Base needs a saved voice recording. Use Generate my voice.")
@@ -365,7 +370,7 @@ class VoiceApp:
         return self.polished_output if self.output_version.get() == "Polished" and self.polished_output else self.output
 
     def apply_polish(self):
-        if not self.output or (self.worker and self.worker.is_alive()) or self.subtitles.active() or self.mix_running:
+        if not self.output or (self.worker and self.worker.is_alive()) or self.subtitles.active() or self.mix_running or self.recording_running:
             return
         if self.polish_mode.get() == "Original":
             self.output_version.set("Original")
@@ -390,7 +395,7 @@ class VoiceApp:
         os.startfile(directory)
 
     def close(self):
-        if (self.worker and self.worker.is_alive()) or self.subtitles.active() or self.mix_running:
+        if (self.worker and self.worker.is_alive()) or self.subtitles.active() or self.mix_running or self.recording_running:
             messagebox.showinfo("Generation is running", "Cancel the active job in its tab and wait for it to finish before closing.")
             return
         winsound.PlaySound(None, 0)

@@ -199,3 +199,11 @@ The voice starts at zero and keeps its speed and duration; existing SRT timestam
 Use tracks licensed for your intended content and keep their license notes. The app imports music locally and does not distribute standalone tracks or include them in portable builds. The user's supplied YouTube Audio Library track was used only for local feature tests. Mixed results and metadata are stored in `data/mixes`; exported music license notes travel with the mixed WAV. There is no automatic music download or embedded music catalog.
 
 Background music verification passed with the supplied Running Home / Televisions MP3: stereo output, matching voice duration, finite peak-safe samples, original source hashes unchanged, Windows playback, byte-identical WAV export with notes, source-overwrite rejection, and cancellation retaining a previous mix. Short synthetic tracks verified looping versus silence after music ends; a deliberately loud fixture triggered peak attenuation. All 21 automated tests passed. TTS layout/switching/export and subtitle workflow regressions passed. The desktop portable copy opens three tabs and passed the same real-track checks using its bundled runtime. Reopen the app to load the new tab. Mixing takes place locally on CPU and requires no further downloads.
+
+## Voice recorder
+
+Open **Voice recorder**, select a microphone, and click **Start recording**. The input meter shows peak level; avoid reaching 100%. **Pause / Resume** skips paused audio, and **Stop and save** creates a separate mono PCM16 WAV in `data/recordings`. Recordings remain local and stop automatically at one hour.
+
+Preview or export your take, or click **Clean up and use as voice reference** to open the existing cleanup workflow. For references, record longer than 5 seconds and at most 60 seconds. Finish recording before starting other audio tasks. If no input appears, check Windows microphone permissions and refresh the device list.
+
+Validation: `python -m scripts.check_recorder` performs a short real microphone capture, pause/resume, export, error recovery, reference handoff, and UI checks.

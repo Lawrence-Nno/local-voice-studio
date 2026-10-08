@@ -19,7 +19,7 @@ if (Test-Path 'requirements-lock.txt') {
 } else {
     uv pip install --python .venv\Scripts\python.exe torch==2.6.0 torchaudio==2.6.0 --index-url https://download.pytorch.org/whl/cu124
     if ($LASTEXITCODE -ne 0) { throw 'CUDA PyTorch installation failed.' }
-    uv pip install --python .venv\Scripts\python.exe chatterbox-tts==0.1.7 setuptools==80.9.0
+    uv pip install --python .venv\Scripts\python.exe chatterbox-tts==0.1.7 setuptools==80.9.0 sounddevice==0.5.5
 }
 if ($LASTEXITCODE -ne 0) { throw 'Dependency installation failed.' }
 uv pip check --python .venv\Scripts\python.exe
