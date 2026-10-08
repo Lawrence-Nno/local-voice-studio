@@ -215,3 +215,7 @@ Open **Audio editor**, then **Open audio...**, **Use latest recording**, or **Us
 **Export saved edit...** exports the last saved result. If you change settings, save again before exporting. **Use saved edit as voice reference** opens the reference-cleanup workflow. Inputs may be mono/stereo and at most one hour; this version trims one continuous selection. It does not join clips or remove sections from the middle. Trimming changes timing, so recreate subtitles for the edited audio.
 
 Validation: `python -m scripts.check_editor` exercises waveform loading, trim/fades, preview, export, source protection, failed-edit recovery and native layout.
+
+### Recording to subtitles
+
+After **Stop and save** in Voice recorder, click **Create subtitles from recording**. The app switches to **Audio to subtitles** with the completed take selected for local transcription. Choose language/device if needed, then click **Create subtitles** and review/export the SRT. Previous subtitle edits remain visible and labelled with their original source until a new transcription succeeds.

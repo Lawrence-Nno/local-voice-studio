@@ -16,6 +16,7 @@ from .subtitles import parse_srt, serialize
 class SubtitlePanel:
     def __init__(self, app, parent):
         self.app = app
+        self.parent = parent
         self.source = None
         self.result_source = None
         self.process = None
@@ -77,11 +78,23 @@ class SubtitlePanel:
         filename = filedialog.askopenfilename(title="Choose audio for subtitles", filetypes=[
             ("Audio", "*.wav *.mp3 *.m4a *.flac *.ogg *.aac *.wma"), ("All files", "*.*")])
         if filename:
-            self.source = {"mode": "transcribe", "audio": filename}
-            self.filename.set("Transcription: " + filename)
-            if self.result_source:
-                self.filename.set(self.filename.get() + " | Editor still contains: " + Path(self.result_source).name)
-            self.status.set("Ready to recognize speech. Automatic detects the language; choose English if detection is unreliable.")
+            try:
+                self.select_audio(filename)
+            except ValueError as exc:
+                messagebox.showerror("Cannot select audio", str(exc))
+
+    def select_audio(self, filename):
+        """Select imported or recorded audio without discarding reviewed subtitles."""
+        if self.active():
+            raise ValueError("Wait for subtitle processing to finish before selecting another recording.")
+        path = Path(filename)
+        if not path.is_file():
+            raise ValueError("The audio file is missing. Record and save a new take, or choose another file.")
+        self.source = {"mode": "transcribe", "audio": str(path)}
+        self.filename.set("Transcription: " + str(path))
+        if self.result_source:
+            self.filename.set(self.filename.get() + " | Editor still contains: " + Path(self.result_source).name)
+        self.status.set("Ready to recognize speech. Click Create subtitles. Automatic detects the language; choose English if detection is unreliable.")
 
     def generated(self):
         if not self.app.output:

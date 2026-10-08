@@ -49,6 +49,9 @@ class RecorderPanel:
             button = ttk.Button(row, text=title, command=command, state="disabled")
             button.pack(side="left", padx=(0, 8))
             self.result_buttons.append(button)
+        self.subtitle_button = ttk.Button(frame, text="Create subtitles from recording", command=self.use_subtitles, state="disabled")
+        self.subtitle_button.pack(anchor="w", pady=(0, 8))
+        self.result_buttons.append(self.subtitle_button)
         ttk.Button(frame, text="Stop playback", command=lambda: winsound.PlaySound(None, 0)).pack(anchor="w")
         ttk.Button(frame, text="Open recordings folder", command=self.open_folder).pack(anchor="w", pady=8)
         label = ttk.Label(frame, textvariable=self.status, wraplength=820)
@@ -150,6 +153,20 @@ class RecorderPanel:
 
     def use_reference(self):
         self.app.import_voice(source=self.output)
+
+    def use_subtitles(self):
+        if self.app.editor_running or self.app.recording_running or self.app.subtitle_running or self.app.mix_running or (self.app.worker and self.app.worker.is_alive()):
+            messagebox.showinfo("Audio task running", "Finish the active audio task before sending a recording to subtitles.")
+            return
+        if not self.output:
+            messagebox.showinfo("Save a recording first", "Record a take and click Stop and save first.")
+            return
+        try:
+            self.app.subtitles.select_audio(self.output)
+            winsound.PlaySound(None, 0)
+            self.app.notebook.select(self.app.subtitles.parent)
+        except ValueError as exc:
+            messagebox.showerror("Cannot use recording", str(exc))
 
     def open_folder(self):
         directory = DATA / "recordings"
