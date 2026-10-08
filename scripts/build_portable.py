@@ -32,7 +32,7 @@ def main():
     print("Bundling app and model weights", flush=True)
     shutil.copytree(ROOT / "app", target / "app", ignore=ignore)
     (target / "scripts").mkdir()
-    for name in ("__init__.py", "check_qwen.py", "check_subtitles.py"):
+    for name in ("__init__.py", "check_qwen.py", "check_subtitles.py", "check_music.py"):
         source = ROOT / "scripts" / name
         if source.exists():
             shutil.copy2(source, target / "scripts" / name)
@@ -66,7 +66,7 @@ def main():
         + ("This personal build includes your saved voice recordings and profiles.\n" if args.include_profiles else "This build contains no personal profiles.\n"), encoding="utf-8")
     (target / "portable-build.json").write_text(json.dumps({"platform": "Windows x64",
         "personal_profiles_included": args.include_profiles, "python": "3.11.15",
-        "models": ["Chatterbox Turbo", "Qwen3-TTS 1.7B Base"], "subtitle_model": "Whisper Small"}, indent=2))
+        "models": ["Chatterbox Turbo", "Qwen3-TTS 1.7B Base"], "subtitle_model": "Whisper Small", "background_music": {"offline": True, "model_required": False, "imported_tracks_bundled": False}}, indent=2))
     print("Portable folder built: " + str(target), flush=True)
 
 

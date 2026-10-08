@@ -120,7 +120,7 @@ class SubtitlePanel:
             self.progress.stop()
 
     def start(self):
-        if self.active() or (self.app.worker and self.app.worker.is_alive()):
+        if self.active() or self.app.mix_running or (self.app.worker and self.app.worker.is_alive()):
             messagebox.showinfo("Job running", "Wait for the current audio job to finish first.")
             return
         if self.source is None:
