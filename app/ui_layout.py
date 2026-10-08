@@ -7,7 +7,7 @@ from .audio_processing import POLISH_MODES
 from .generation import GENERATION_PRESETS
 
 
-def build_interface(app):
+def build_interface(app, parent=None):
     root = app.root
     bg, ink, muted, blue = "#eef2f7", "#17243b", "#52647a", "#2563eb"
     root.configure(background=bg)
@@ -28,7 +28,7 @@ def build_interface(app):
     style.configure("TEntry", padding=5)
     style.configure("Horizontal.TProgressbar", background=blue, troughcolor="#e4ebf4", borderwidth=0)
 
-    panel = ttk.Frame(root, padding=16)
+    panel = ttk.Frame(parent if parent is not None else root, padding=16)
     panel.pack(fill="both", expand=True)
     ttk.Label(panel, text="Local Voice Studio", style="Title.TLabel").pack(anchor="w")
     ttk.Label(panel, text="Your voice. Your words.  •  Private speech generation on this computer.").pack(anchor="w", pady=(2, 12))

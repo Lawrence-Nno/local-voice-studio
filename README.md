@@ -170,3 +170,20 @@ To rebuild from the verified developer installation, run `.venv\Scripts\python.e
 
 
 The completed personal package is at `dist/Local Voice Studio` (17.16 GiB), with a `Local Voice Studio` desktop shortcut already created. Verification on 8 October 2026 passed after renaming the build folder: executable/native UI launch, bundled interpreter paths, 13 source regression tests, and real offline GPU generation with both bundled models. Loaded-model generation took 2.75 seconds with Turbo and 20.50 seconds with Qwen for the short comparison sentence. Initial loading was slower from the fresh copy. Moving to a different PC remains unverified; the Windows x64 target and NVIDIA-driver requirements still apply.
+
+## Audio to subtitles
+
+The **Audio to subtitles** tab provides two offline workflows:
+
+- **Import audio...** recognizes spoken words and their timestamps using multilingual Whisper Small. Common formats include WAV, MP3, M4A, FLAC, OGG, AAC, and WMA, decoded through PyAV's bundled media libraries. Choose Automatic language detection or English explicitly.
+- **Use generated speech + saved script** aligns the exact English script saved with a newly generated TTS job, preserving wording instead of replacing it with recognition guesses. It uses actual generated section audio and accounts for inter-section pauses. Original and Polished have identical timing; the currently selected version identifies the source. Edits made later in the TTS text box do not alter the saved script. Older jobs without a saved script can be transcribed by importing their WAV.
+
+Click **Create subtitles**, review/edit the SRT text and timing lines, then **Export reviewed SRT...**. UTF-8 export validates sequential cue numbers, positive durations, and non-overlapping chronological times. Automatically created cues aim for at most two 42-character lines and seven seconds per cue; unusually long individual words can exceed line width. Timings are model estimates and should be reviewed. Silence or unrecognizable speech produces an error instead of an empty subtitle file.
+
+Only one audio job runs at a time. Subtitle processing releases the loaded TTS model, runs in a cancellable isolated worker, and exits afterward. Cancellation or failure keeps the previous editor contents. Automatic SRT results and metadata are saved under `data/subtitles`; exports include your edits. Generated-script alignment currently supports English and sections up to 30 seconds each; longer sections can use transcription. There is no speaker diarization, subtitle translation, video preview, or manual audio-timing playback in this version.
+
+The subtitle model revision is pinned in `subtitle-model-spec.json`; worker dependencies share the isolated Qwen environment and its lock file. Run `setup-subtitles.ps1` for a developer installation after the Qwen environment is set up. Fresh portable builds include Whisper Small; the existing personal portable copy is updated in place by `scripts/update_portable_subtitles.py`, preserving data. The [Faster-Whisper repository](https://github.com/SYSTRAN/faster-whisper) describes its transcription and timestamp APIs.
+
+Both subtitle workflows passed real GPU and CPU checks. Seventeen automated tests passed, along with native tab layout, saved-script selection after textbox edits, UTF-8 export, invalid-edit rejection, cancellation, shared job locking, TTS model switching and original/polished audio export checks. The existing portable executable opens both tabs and passed both GPU subtitle workflows. Generated SRT files are ignored by Git.
+
+With subtitles included, the updated personal portable folder is approximately 17.83 GiB. Your existing desktop shortcut continues to point to it; reopen the app to load the new tab.

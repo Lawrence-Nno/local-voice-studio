@@ -18,12 +18,14 @@ def main():
     root = tk.Tk()
     root.withdraw()
     app = VoiceApp(root)
+    app.model_choice.set("Chatterbox Turbo")
+    app.update_model_controls()
     errors = []
     # Engine inference is validated separately. Here a completed real sample isolates UI job handling.
     def completed_job(_engine, _text, _profile, _reference, _device, _cancel, progress, **_kwargs):
         progress("Verifying background UI job")
         return source
-    with patch("app.ui.run_job", side_effect=completed_job), patch("app.ui.messagebox.showerror", side_effect=lambda *args: errors.append(args)):
+    with patch.object(app.settings, "update"), patch("app.ui.run_job", side_effect=completed_job), patch("app.ui.messagebox.showerror", side_effect=lambda *args: errors.append(args)):
         app.polish_mode.set("Original")
         app.generate(generic=True)
         assert str(app.generate_button["state"]) == "disabled"

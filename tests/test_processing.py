@@ -74,6 +74,9 @@ class ProcessingTests(unittest.TestCase):
             second = run_job(engine, "Hello.", None, None, "CPU", Event(), lambda *_: None, data, options)
             self.assertEqual(first.read_bytes(), second.read_bytes())
             self.assertEqual(engine.parameters["temperature"], .65)
+            metadata = read_json(data / "jobs" / second.stem / "job.json")
+            self.assertEqual(metadata["text"], "Hello.")
+            self.assertEqual(metadata["section_texts"], ["Hello."])
             self.assertEqual(read_json(data / "jobs" / second.stem / "job.json")["generation_options"],
                              {**options, "temperature": .65, "repetition_penalty": 1.2})
 

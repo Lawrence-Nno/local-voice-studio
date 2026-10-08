@@ -25,10 +25,11 @@ class VoiceApp:
         width = min(round(940 * scale), root.winfo_screenwidth() - 80)
         height = min(round(740 * scale), root.winfo_screenheight() - 120)
         root.geometry(f"{width}x{height}")
-        root.minsize(min(round(900 * scale), width), min(round(700 * scale), height))
+        root.minsize(min(round(900 * scale), width), min(round(730 * scale), height))
         self.events = queue.Queue()
         self.cancel = threading.Event()
         self.worker = None
+        self.subtitle_running = False
         self.output = None
         self.polished_output = None
         self.engine = SpeechEngine()
@@ -38,7 +39,7 @@ class VoiceApp:
         if self.model_choice.get() not in ("Chatterbox Turbo", "Qwen3-TTS 1.7B Base"):
             self.model_choice.set("Chatterbox Turbo")
         self.profile_rows = []
-        self.status = tk.StringVar(value="Ready. Import your voice, or run a generic speech test.")
+        self.status = tk.StringVar(value="Ready. Choose a tab to generate speech or create subtitles.")
         self.device = tk.StringVar(value=self.settings.values.get("device", "Automatic"))
         self.preset = tk.StringVar(value=self.settings.values.get("preset", "Default"))
         if self.preset.get() not in GENERATION_PRESETS:
@@ -52,7 +53,16 @@ class VoiceApp:
         if self.device.get() not in ("Automatic", "NVIDIA GPU", "CPU"):
             self.device.set("Automatic")
         from .ui_layout import build_interface
-        build_interface(self)
+        notebook = ttk.Notebook(root)
+        notebook.pack(fill="both", expand=True)
+        speech_tab = ttk.Frame(notebook)
+        subtitle_tab = ttk.Frame(notebook)
+        notebook.add(speech_tab, text="Text to speech")
+        notebook.add(subtitle_tab, text="Audio to subtitles")
+        build_interface(self, speech_tab)
+        from .subtitle_ui import SubtitlePanel
+        self.subtitles = SubtitlePanel(self, subtitle_tab)
+        self.notebook = notebook
         self.refresh_profiles()
         self.select_model()
         root.protocol("WM_DELETE_WINDOW", self.close)
@@ -183,6 +193,7 @@ class VoiceApp:
             messagebox.showerror("Cannot clean reference", str(exc))
 
     def busy(self, active):
+        active = active or self.subtitle_running
         for control in (self.generate_button, self.test_button, self.add_button, self.replace_button,
                         self.cleanup_button, self.seed_entry, self.strength_slider, self.transcript_button):
             control.configure(state="disabled" if active else "normal")
@@ -194,7 +205,7 @@ class VoiceApp:
             self.update_model_controls()
 
     def generate(self, generic=False):
-        if self.worker and self.worker.is_alive():
+        if (self.worker and self.worker.is_alive()) or self.subtitles.active():
             return
         if generic and self.model_choice.get() != "Chatterbox Turbo":
             messagebox.showinfo("Reference required", "Qwen Base needs a saved voice recording. Use Generate my voice.")
@@ -346,7 +357,7 @@ class VoiceApp:
         return self.polished_output if self.output_version.get() == "Polished" and self.polished_output else self.output
 
     def apply_polish(self):
-        if not self.output or (self.worker and self.worker.is_alive()):
+        if not self.output or (self.worker and self.worker.is_alive()) or self.subtitles.active():
             return
         if self.polish_mode.get() == "Original":
             self.output_version.set("Original")
@@ -371,8 +382,8 @@ class VoiceApp:
         os.startfile(directory)
 
     def close(self):
-        if self.worker and self.worker.is_alive():
-            messagebox.showinfo("Generation is running", "Cancel and wait for the current section to finish before closing.")
+        if (self.worker and self.worker.is_alive()) or self.subtitles.active():
+            messagebox.showinfo("Generation is running", "Cancel the active job in its tab and wait for it to finish before closing.")
             return
         winsound.PlaySound(None, 0)
         self.engine.unload()

@@ -59,6 +59,7 @@ def run_job(engine, text: str, profile: dict | None, reference: Path | None,
     outputs = data / "outputs"
     outputs.mkdir(parents=True, exist_ok=True)
     metadata = {"id": job_id, "state": "loading", "created": datetime.now(timezone.utc).isoformat(),
+                "text": text, "section_texts": chunks,
                 "profile_id": profile["id"] if profile else None,
                 "profile_version": profile["version"] if profile else None,
                 "generic_test": profile is None, "model": getattr(engine, "model_id", "Chatterbox Turbo"),

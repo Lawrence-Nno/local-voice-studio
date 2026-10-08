@@ -15,7 +15,7 @@ def main():
     assert app.models.winfo_ismapped()
     assert app.generate_button.winfo_ismapped()
     atomic_json(DATA / "portable-check.json", {"root": str(ROOT), "python": sys.executable,
-        "window": root.title(), "profiles": len(app.profile_rows), "models": list(app.models["values"])})
+        "window": root.title(), "tabs": [app.notebook.tab(t, "text") for t in app.notebook.tabs()], "profiles": len(app.profile_rows), "models": list(app.models["values"])})
     root.after(1200, root.destroy)
     root.mainloop()
 

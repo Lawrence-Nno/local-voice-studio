@@ -26,6 +26,7 @@ data/
 *.ogg
 *.aac
 *.wma
+*.srt
 *.safetensors
 *.pt
 *.pth
