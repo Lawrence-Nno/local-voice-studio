@@ -16,6 +16,7 @@ class StudioShell:
         self.notebook = ttk.Notebook(self.frame, style='Studio.TNotebook', takefocus=False)
         self.notebook.pack(side='left', fill='both', expand=True)
         self.buttons = {}
+        self.group_headers = []
         self.scroll_pages = {}
         self.notebook.bind('<<NotebookTabChanged>>', self.changed, add='+')
         app.root.bind('<MouseWheel>', self.wheel, add='+')
@@ -30,12 +31,17 @@ class StudioShell:
         for title, pages in (('CREATE', ((0,'Text to speech'),(3,'Voice recorder'),(1,'Audio to subtitles'))),
                              ('EDIT & ENHANCE', ((4,'Audio editor'),(6,'Audio cleanup'),(8,'Voice effects'),(2,'Background music'))),
                              ('EXPORT & AUTOMATE', ((5,'Format converter'),(7,'Batch processing')))):
-            ttk.Label(self.sidebar, text=title, style='Sidebar.TLabel').pack(anchor='w', padx=10, pady=(14,6))
+            header = ttk.Label(self.sidebar, text=title, style='SidebarGroup.TLabel', takefocus=False)
+            header.pack(fill='x', pady=(12,6))
+            self.group_headers.append(header)
             for index, name in pages:
                 button = ttk.Button(self.sidebar, text=name, style='Nav.TButton',
                                     command=lambda index=index: self.notebook.select(index))
                 button.pack(fill='x', pady=2)
                 self.buttons[index] = button
+        self.audio_info_button = ttk.Button(self.sidebar, text='Audio file information...',
+                                           style='Nav.TButton', command=self.app.open_audio_info)
+        self.audio_info_button.pack(fill='x', pady=2)
         ttk.Label(self.sidebar, text='LOCAL PROCESSING\nAudio stays on this computer.', style='Sidebar.TLabel').pack(side='bottom', anchor='w', padx=10, pady=(18,0))
         for page_id in self.notebook.tabs():
             page = self.app.root.nametowidget(page_id)

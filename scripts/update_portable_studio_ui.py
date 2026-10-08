@@ -13,7 +13,9 @@ def main():
     shutil.copy2(ROOT/'README.md',target/'README.md')
     manifest=target/'portable-build.json'
     value=json.loads(manifest.read_text())
-    value['studio_interface']={'theme':'dark','navigation':'grouped sidebar','scrollable_pages':True,'verified':'2026-10-08'}
+    value['studio_interface']={'theme':'dark','navigation':'grouped sidebar','scrollable_pages':True,
+                               'shaded_group_headers':True,'checkboxes':'green checkmarks',
+                               'audio_info_sidebar':True,'verified':'2026-10-08'}
     manifest.write_text(json.dumps(value,indent=2),encoding='utf-8')
     note=target/'READ ME.txt'
     text=note.read_text(encoding='utf-8')

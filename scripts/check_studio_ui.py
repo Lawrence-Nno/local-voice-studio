@@ -37,6 +37,36 @@ def main():
             assert button.winfo_rooty()+button.winfo_height() <= root.winfo_rooty()+root.winfo_height()
             ImageGrab.grab(bbox=(root.winfo_rootx(),root.winfo_rooty(),root.winfo_rootx()+root.winfo_width(),root.winfo_rooty()+root.winfo_height())).save(folder/f'page-{index}.png')
         assert app.text['background']==FIELD
+        current=app.notebook.select()
+        for header in app.shell.group_headers:
+            assert header.winfo_class()=='TLabel'
+            header.event_generate('<Button-1>')
+        pump()
+        assert app.notebook.select()==current
+        app.shell.audio_info_button.invoke()
+        pump()
+        assert app.audio_info_dialog.winfo_exists()
+        app.audio_info_dialog.destroy()
+        app.notebook.select(6)
+        pump()
+        def descendants(widget):
+            for child in widget.winfo_children():
+                yield child
+                yield from descendants(child)
+        checks=[widget for widget in descendants(root.nametowidget(app.notebook.select())) if widget.winfo_class()=='TCheckbutton']
+        assert checks
+        for check in checks:
+            before=check.instate(['selected'])
+            check.invoke()
+            assert check.instate(['selected']) != before
+            check.state(['disabled'])
+            check.invoke()
+            assert check.instate(['selected']) != before
+            check.state(['!disabled'])
+            check.invoke()
+            assert check.instate(['selected']) == before
+        pump()
+        ImageGrab.grab(bbox=(root.winfo_rootx(),root.winfo_rooty(),root.winfo_rootx()+root.winfo_width(),root.winfo_rooty()+root.winfo_height())).save(folder/'checkboxes-and-headers.png')
         app.notebook.select(app.subtitles.parent)
         pump()
         assert app.shell.buttons[1]['style']=='Selected.Nav.TButton'
@@ -53,8 +83,9 @@ def main():
         pump()
         assert canvas.yview()[1]>.99, (canvas.yview(),canvas['scrollregion'],canvas.winfo_height())
         assert app.export_button.winfo_rooty()+app.export_button.winfo_height() <= canvas.winfo_rooty()+canvas.winfo_height()
+        assert app.shell.audio_info_button.winfo_rooty()+app.shell.audio_info_button.winfo_height() <= root.winfo_rooty()+root.winfo_height()
         assert not callback_errors, callback_errors
-        print('Nine-page sidebar, active navigation, dark text/dialogs, programmatic handoff and small-window scrolling passed.')
+        print('Nine-page sidebar, non-clickable headers, checkbox states, audio-info access, dark dialogs, handoffs and small-window scrolling passed.')
     finally:
         app.editor_panel.stop_playback()
         root.destroy()

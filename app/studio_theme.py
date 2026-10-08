@@ -59,6 +59,31 @@ def configure_theme(root):
                         indicatorforeground=ACCENT, padding=3)
         style.map(name, background=[('active',BG)], foreground=[('disabled','#748498')],
                   indicatorbackground=[('selected',ACCENT),('active','#32475f')])
+    # Use explicit images: clam's filled square was ambiguous on the dark palette.
+    from PIL import Image, ImageDraw, ImageTk
+    size = round(18 * max(1,root.winfo_fpixels('1i')/96))
+    images = []
+    for checked, disabled in ((False,False),(True,False),(False,True),(True,True)):
+        image = Image.new('RGBA',(size,size),(0,0,0,0))
+        draw = ImageDraw.Draw(image)
+        green = '#2b8d62' if disabled else '#35cf89'
+        draw.rounded_rectangle((1,1,size-2,size-2),radius=max(2,size//6),
+                               fill=green if checked else FIELD,
+                               outline=green if checked else '#73869c',width=max(1,size//12))
+        if checked:
+            draw.line([(size*.23,size*.50),(size*.43,size*.70),(size*.77,size*.30)],
+                      fill='#062c1c',width=max(2,size//8))
+        images.append(ImageTk.PhotoImage(image,master=root))
+    root.studio_checkbox_images = images
+    off,on,disabled_off,disabled_on = images
+    style.element_create('Studio.Check.indicator','image',off,
+                         ('disabled','selected',disabled_on),('disabled',disabled_off),
+                         ('selected',on),('alternate',off),width=size+8,sticky='w')
+    style.layout('TCheckbutton', [('Checkbutton.padding', {'sticky':'nswe','children':[
+        ('Studio.Check.indicator', {'side':'left','sticky':''}),
+        ('Checkbutton.focus', {'side':'left','sticky':'w','children':[
+            ('Checkbutton.label', {'sticky':'nswe'})]})]})])
+    style.configure('TCheckbutton', padding=(3,5), indicatormargin=(0,0,8,0))
     style.configure('TLabelframe', background=BG, bordercolor=BORDER, relief='solid')
     style.configure('TLabelframe.Label', background=BG, foreground=MUTED, font=('Segoe UI',9,'bold'))
     style.configure('Horizontal.TScale', background=BG, troughcolor=FIELD, bordercolor=BORDER)
@@ -74,8 +99,10 @@ def configure_theme(root):
     style.layout('Studio.TNotebook.Tab', [])
     style.configure('Sidebar.TFrame', background='#0b1119')
     style.configure('Sidebar.TLabel', background='#0b1119', foreground=MUTED, font=('Segoe UI',9))
+    style.configure('SidebarGroup.TLabel', background='#202d3d', foreground='#b8c9dc',
+                    font=('Segoe UI',8,'bold'), padding=(10,5))
     style.configure('Brand.TLabel', background='#0b1119', foreground=INK, font=('Segoe UI',13,'bold'))
-    style.configure('Nav.TButton', background='#0b1119', foreground=MUTED, anchor='w', padding=(12,10))
+    style.configure('Nav.TButton', background='#0b1119', foreground=MUTED, anchor='w', padding=(12,8))
     style.map('Nav.TButton', background=[('active','#1b2c40')], foreground=[('active',INK)])
     style.configure('Selected.Nav.TButton', background='#183454', foreground='#dcebff')
     style.map('Selected.Nav.TButton', background=[('active','#21446b')], foreground=[('active','#ffffff')])
