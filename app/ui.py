@@ -74,6 +74,8 @@ class VoiceApp:
         notebook.add(editor_tab, text="Audio editor")
         converter_tab = ttk.Frame(notebook)
         notebook.add(converter_tab, text="Format converter")
+        cleanup_tab = ttk.Frame(notebook)
+        notebook.add(cleanup_tab, text="Audio cleanup")
         build_interface(self, speech_tab)
         from .subtitle_ui import SubtitlePanel
         self.subtitles = SubtitlePanel(self, subtitle_tab)
@@ -85,6 +87,8 @@ class VoiceApp:
         self.editor_panel = EditorPanel(self, editor_tab)
         from .converter_ui import ConverterPanel
         self.converter_panel = ConverterPanel(self, converter_tab)
+        from .cleanup_ui import CleanupPanel
+        self.cleanup_panel = CleanupPanel(self, cleanup_tab)
         self.notebook = notebook
         self.refresh_profiles()
         self.select_model()

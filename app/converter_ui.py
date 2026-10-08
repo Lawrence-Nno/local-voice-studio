@@ -16,6 +16,16 @@ EXTENSIONS = {'WAV': '.wav', 'MP3': '.mp3', 'FLAC': '.flac', 'M4A (AAC)': '.m4a'
 
 
 class ConverterPanel:
+    worker_module = 'app.conversion_worker'
+    output_directory = 'converted'
+    task_label = 'Conversion'
+
+    def completion_status(self, info):
+        return f"Converted: {info['format']} | {info['duration']:.2f}s | {info['rate']} Hz | {info['channels']} channel(s) | {info['bytes']/1024:.1f} KB. Ready to export."
+
+    def make_request(self, source, temporary, format_name):
+        return {'source':str(source),'destination':str(temporary),'format_name':format_name,'rate':int(self.rate.get()),'channels':self.channels.get(),'bitrate':int(self.bitrate.get())*1000}
+
     def __init__(self, app, parent):
         self.app = app
         self.source = self.output = self.output_source = None
@@ -111,9 +121,9 @@ class ConverterPanel:
             return
         source = self.source
         format_name = self.format.get()
-        output = DATA/'converted'/(uuid.uuid4().hex+EXTENSIONS[format_name])
+        output = DATA/self.output_directory/(uuid.uuid4().hex+EXTENSIONS[format_name])
         temporary = output.with_name(output.stem+'.partial'+output.suffix)
-        request = {'source':str(source),'destination':str(temporary),'format_name':format_name,'rate':int(self.rate.get()),'channels':self.channels.get(),'bitrate':int(self.bitrate.get())*1000}
+        request = self.make_request(source, temporary, format_name)
         self.cancel.clear()
         self.app.conversion_running = True
         self.app.busy(False)
@@ -123,11 +133,11 @@ class ConverterPanel:
         self.export_button.configure(state='disabled')
         self.cancel_button.configure(state='normal')
         self.progress.start()
-        self.status.set('Converting locally...')
+        self.status.set(self.task_label + ' running locally...')
         def work():
             process = None
             try:
-                process = subprocess.Popen([str(interpreter),'-E','-s','-m','app.conversion_worker'],cwd=ROOT,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,encoding='utf-8',creationflags=subprocess.CREATE_NO_WINDOW)
+                process = subprocess.Popen([str(interpreter),'-E','-s','-m',self.worker_module],cwd=ROOT,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,encoding='utf-8',creationflags=subprocess.CREATE_NO_WINDOW)
                 self.process = process
                 payload = json.dumps(request)+'\n'
                 while True:
@@ -157,6 +167,9 @@ class ConverterPanel:
                     process.communicate()
                 self.process = None
                 temporary.unlink(missing_ok=True)
+                if self.cancel.is_set() and request.get('original'):
+                    Path(request['original']).unlink(missing_ok=True)
+                    temporary.with_suffix('.processing.wav').unlink(missing_ok=True)
         threading.Thread(target=work,daemon=True).start()
 
     def poll(self):
@@ -174,12 +187,13 @@ class ConverterPanel:
             self.cancel_button.configure(state='disabled')
             if kind == 'complete':
                 self.output,self.output_source,info = value
-                self.status.set(f"Converted: {info['format']} | {info['duration']:.2f}s | {info['rate']} Hz | {info['channels']} channel(s) | {info['bytes']/1024:.1f} KB. Ready to export.")
+                self.result_info = info
+                self.status.set(self.completion_status(info))
             elif kind == 'cancelled':
-                self.status.set('Conversion cancelled. Previous converted file is still available.')
+                self.status.set(self.task_label + ' cancelled. Previous completed file is still available.')
             else:
-                self.status.set('Conversion failed. Source and previous result are unchanged.')
-                messagebox.showerror('Conversion failed',value)
+                self.status.set(self.task_label + ' failed. Source and previous result are unchanged.')
+                messagebox.showerror(self.task_label + ' failed',value)
             self.export_button.configure(state='normal' if self.output else 'disabled')
         self.app.root.after(100,self.poll)
 

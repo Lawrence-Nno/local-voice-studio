@@ -227,3 +227,11 @@ Open **Format converter** and choose an imported file, latest recorded take, sel
 WAV and FLAC encode PCM16 audio; MP3, AAC and Opus are lossy. Opus always uses 48 kHz. Converting a compressed source cannot recover lost detail. Audio from the first stream is converted; video, artwork and metadata are not copied. Multichannel audio requires an explicit mono/stereo downmix. The existing bundled PyAV runtime handles conversion offline without models or additional downloads.
 
 Validation: `python -m scripts.check_converter` checks all five real encoders/decoders, round trips, duration/channels/resampling, export, cancellation, invalid inputs, source protection and native layout.
+
+## Audio cleanup
+
+Open **Audio cleanup**, import audio or select a saved recording/generated clip, set noise reduction and volume, and click **Clean audio**. Automatic leveling targets -20 dBFS RMS with a maximum 10x gain; peak protection limits output to 0.98 full scale. Optional 70 Hz high-pass reduces low rumble. After completion, **Play original** and **Play cleaned** compare the last processed source/result; **Export cleaned WAV...** exports that result. Change settings and process again to update the result.
+
+Files remain local in `data/cleaned`. Mono/stereo channels, source rate and duration are preserved; output is PCM16 WAV. Use audio up to one hour at 8-192 kHz. Noise reduction estimates steady noise from quiet spectral frames throughout the source; start mild and compare speech quality. It is not voice separation and cannot reliably remove music, other speakers or restore clipped audio. Set reduction to zero, turn off rumble and automatic leveling, and adjust volume for volume-only processing.
+
+Validation: `python -m scripts.check_cleanup` verifies measured synthetic noise attenuation, exact bypass, duration/rate/stereo retention, peak protection, source preservation, comparison playback handoff, export, cancellation and native layout.
