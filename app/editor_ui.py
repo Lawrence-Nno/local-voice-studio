@@ -80,6 +80,8 @@ class EditorPanel:
         self.join_button = ttk.Button(row, text='Join clips...', command=self.open_join)
         self.join_button.pack(side='left', padx=8)
         self.controls.append(self.join_button)
+        from .audio_shortcuts import AudioShortcuts
+        self.shortcuts = AudioShortcuts(app, self, row, 'Send saved edit to...')
         ttk.Label(frame, text='The highlighted section is kept; audio outside it is removed. Preview includes your volume and fades.\nSaving preserves the source sample rate and channels. Export uses the last saved edit; changed settings require saving again.', wraplength=820).pack(anchor='w', pady=8)
         self.progress = ttk.Progressbar(frame, mode='indeterminate')
         self.progress.pack(fill='x', pady=6)

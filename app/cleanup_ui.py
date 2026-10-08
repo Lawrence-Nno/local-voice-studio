@@ -81,6 +81,8 @@ class CleanupPanel(ConverterPanel):
             button=ttk.Button(row,text=title,command=command)
             button.pack(side='left',padx=(0,8))
             self.controls.append(button)
+        from .audio_shortcuts import AudioShortcuts
+        self.shortcuts=AudioShortcuts(app,self,row,'Send cleaned audio to...')
         ttk.Label(frame,text='Playback compares the last completed cleanup. Click Clean audio again after changing settings.',wraplength=820).pack(anchor='w',pady=8)
         ttk.Button(frame,text='Open cleaned files folder',command=self.open_folder).pack(anchor='w',pady=8)
         self.progress=ttk.Progressbar(frame,mode='indeterminate')

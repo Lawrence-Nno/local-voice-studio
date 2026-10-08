@@ -23,6 +23,7 @@ Audio processing and model inference run locally. Internet access is needed for 
 - **Batch processing:** queue multiple files for cleanup, conversion, or transcription; settings snapshots, per-file status, optional continuation after errors, cancellation retaining completed files, and a run report.
 - **Voice effects:** independent speed/pitch adjustment, room reverb, optional radio-style filtering/saturation, named starter/custom presets, reset, original/processed playback, cancellation, and WAV export.
 - **Audio file information:** inspect duration, format/codec, sample rate, channels, file size, and full path; select a local file or loaded input/result and copy details to the clipboard.
+- **Direct audio shortcuts:** send a saved editor/joined result or cleaned audio directly to conversion, subtitles, or voice effects, with the destination tab ready for processing.
 - **Portable Windows launch:** native EXE, custom application icon, bundled runtimes/models, and a desktop-shortcut creator.
 
 ## Launch and transfer
@@ -99,6 +100,8 @@ Click **Join clips...** to open an ordered clip list. Add whole audio files or *
 
 Joining supports 2-50 clips and up to one hour of output. Channel conversion may change amplitude. No crossfade or multitrack overlap is applied. Trimming/joining changes timing; recreate subtitles afterward. Originals are protected from export overwrite.
 
+**Send saved edit to...** opens Format converter, Audio to subtitles, or Voice effects with the last saved trimmed/joined WAV selected. Unsaved selection/settings changes are not included; save again to send those changes.
+
 ## Format converter
 
 Choose imported audio, a recording, generated speech, or a saved edit. Select WAV, MP3, FLAC, M4A (AAC), or OGG (Opus), sample rate, channels, and applicable bitrate. Click **Convert audio**, then **Export converted file...**.
@@ -112,6 +115,8 @@ Choose imported audio or a saved recording/generated clip. Adjust noise reductio
 Start with mild noise reduction. This targets steady noise such as hiss or a fan; it is not voice separation and does not reliably remove music, other voices, or repair clipping. Volume-only processing is available by setting reduction to zero and disabling rumble removal; automatic leveling is optional. Peak protection avoids output clipping.
 
 Input limit is one hour, mono/stereo at 8-192 kHz. Duration, sample rate, and channels are retained. Output is PCM16 WAV.
+
+After cleanup, use **Send cleaned audio to...** to open conversion, subtitles, or effects with the last completed cleaned WAV selected. Click the destination's processing button when ready. Existing subtitle edits and processed results are retained until new processing succeeds. Shortcuts are unavailable while an audio job is active.
 
 ## Batch processing
 
@@ -178,6 +183,7 @@ The existing automated suite has 27 tests. Feature acceptance scripts verify rea
 .\.venv\Scripts\python.exe -m scripts.check_batch
 .\.venv\Scripts\python.exe -m scripts.check_effects
 .\.venv\Scripts\python.exe -m scripts.check_effects_presets
+.\.venv\Scripts\python.exe -m scripts.check_audio_shortcuts
 ```
 
 Some acceptance scripts capture a short microphone sample, play test audio, or require a previously generated speech file. Test recordings stay local.
