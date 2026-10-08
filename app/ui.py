@@ -35,6 +35,7 @@ class VoiceApp:
         self.subtitle_running = False
         self.mix_running = False
         self.recording_running = False
+        self.editor_running = False
         self.output = None
         self.polished_output = None
         self.engine = SpeechEngine()
@@ -68,6 +69,8 @@ class VoiceApp:
         notebook.add(subtitle_tab, text="Audio to subtitles")
         notebook.add(music_tab, text="Background music")
         notebook.add(recording_tab, text="Voice recorder")
+        editor_tab = ttk.Frame(notebook)
+        notebook.add(editor_tab, text="Audio editor")
         build_interface(self, speech_tab)
         from .subtitle_ui import SubtitlePanel
         self.subtitles = SubtitlePanel(self, subtitle_tab)
@@ -75,6 +78,8 @@ class VoiceApp:
         self.music_panel = MusicPanel(self, music_tab)
         from .recorder_ui import RecorderPanel
         self.recorder_panel = RecorderPanel(self, recording_tab)
+        from .editor_ui import EditorPanel
+        self.editor_panel = EditorPanel(self, editor_tab)
         self.notebook = notebook
         self.refresh_profiles()
         self.select_model()
@@ -206,7 +211,7 @@ class VoiceApp:
             messagebox.showerror("Cannot clean reference", str(exc))
 
     def busy(self, active):
-        active = active or self.subtitle_running or self.mix_running or self.recording_running
+        active = active or self.subtitle_running or self.mix_running or self.recording_running or self.editor_running
         for control in (self.generate_button, self.test_button, self.add_button, self.replace_button,
                         self.cleanup_button, self.seed_entry, self.strength_slider, self.transcript_button):
             control.configure(state="disabled" if active else "normal")
@@ -218,7 +223,7 @@ class VoiceApp:
             self.update_model_controls()
 
     def generate(self, generic=False):
-        if (self.worker and self.worker.is_alive()) or self.subtitles.active() or self.mix_running or self.recording_running:
+        if (self.worker and self.worker.is_alive()) or self.subtitles.active() or self.mix_running or self.recording_running or self.editor_running:
             return
         if generic and self.model_choice.get() != "Chatterbox Turbo":
             messagebox.showinfo("Reference required", "Qwen Base needs a saved voice recording. Use Generate my voice.")
@@ -370,7 +375,7 @@ class VoiceApp:
         return self.polished_output if self.output_version.get() == "Polished" and self.polished_output else self.output
 
     def apply_polish(self):
-        if not self.output or (self.worker and self.worker.is_alive()) or self.subtitles.active() or self.mix_running or self.recording_running:
+        if not self.output or (self.worker and self.worker.is_alive()) or self.subtitles.active() or self.mix_running or self.recording_running or self.editor_running:
             return
         if self.polish_mode.get() == "Original":
             self.output_version.set("Original")
@@ -395,7 +400,7 @@ class VoiceApp:
         os.startfile(directory)
 
     def close(self):
-        if (self.worker and self.worker.is_alive()) or self.subtitles.active() or self.mix_running or self.recording_running:
+        if (self.worker and self.worker.is_alive()) or self.subtitles.active() or self.mix_running or self.recording_running or self.editor_running:
             messagebox.showinfo("Generation is running", "Cancel the active job in its tab and wait for it to finish before closing.")
             return
         winsound.PlaySound(None, 0)

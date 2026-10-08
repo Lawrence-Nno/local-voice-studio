@@ -207,3 +207,11 @@ Open **Voice recorder**, select a microphone, and click **Start recording**. The
 Preview or export your take, or click **Clean up and use as voice reference** to open the existing cleanup workflow. For references, record longer than 5 seconds and at most 60 seconds. Finish recording before starting other audio tasks. If no input appears, check Windows microphone permissions and refresh the device list.
 
 Validation: `python -m scripts.check_recorder` performs a short real microphone capture, pause/resume, export, error recovery, reference handoff, and UI checks.
+
+## Audio editor
+
+Open **Audio editor**, then **Open audio...**, **Use latest recording**, or **Use selected generated speech**. WAV, FLAC, OGG, and MP3 inputs are supported by the bundled decoder. Drag across the waveform or enter exact start/end seconds: the highlighted section is kept. Adjust volume and optional fade-in/fade-out, then **Preview selection** or **Save edited WAV**. The source stays unchanged; edits are stored in `data/edits` as PCM16 WAV with the original sample rate and channels.
+
+**Export saved edit...** exports the last saved result. If you change settings, save again before exporting. **Use saved edit as voice reference** opens the reference-cleanup workflow. Inputs may be mono/stereo and at most one hour; this version trims one continuous selection. It does not join clips or remove sections from the middle. Trimming changes timing, so recreate subtitles for the edited audio.
+
+Validation: `python -m scripts.check_editor` exercises waveform loading, trim/fades, preview, export, source protection, failed-edit recovery and native layout.
