@@ -10,6 +10,8 @@ Audio processing and model inference run locally. Internet access is needed for 
 
 ## Complete feature list
 
+- **Studio interface:** coordinated dark theme, grouped left-sidebar navigation with an active-page highlight, consistent controls/dialogs, blue primary actions, and scrollable pages for smaller windows. All nine audio tools remain available.
+
 - **Text to speech and voice cloning:** Chatterbox Turbo and Qwen3-TTS 1.7B Base, persistent voice profiles, saved reference versions, remembered model/voice selection, longer-text chunking, delivery presets, optional seed, playback, and WAV export.
 - **Pronunciation dictionary:** saved word/phrase pronunciation spellings, case-insensitive whole-word matching, enable/disable switch, script preview, and generation snapshots for both voice models. Original scripts and subtitle spelling are preserved.
 - **Reference preparation before cloning:** select a section, trim quiet edges, adjust volume, optional gentle noise reduction, and compare original/prepared recordings.

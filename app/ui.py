@@ -25,10 +25,10 @@ class VoiceApp:
         if icon.exists():
             root.iconbitmap(default=str(icon))
         scale = max(1.0, root.winfo_fpixels("1i") / 96)
-        width = min(round(940 * scale), root.winfo_screenwidth() - 80)
-        height = min(round(740 * scale), root.winfo_screenheight() - 120)
+        width = min(round(1220 * scale), root.winfo_screenwidth() - 80)
+        height = min(round(820 * scale), root.winfo_screenheight() - 120)
         root.geometry(f"{width}x{height}")
-        root.minsize(min(round(900 * scale), width), min(round(730 * scale), height))
+        root.minsize(min(round(1050 * scale), width), min(round(650 * scale), height))
         self.events = queue.Queue()
         self.cancel = threading.Event()
         self.worker = None
@@ -47,7 +47,7 @@ class VoiceApp:
         if self.model_choice.get() not in ("Chatterbox Turbo", "Qwen3-TTS 1.7B Base"):
             self.model_choice.set("Chatterbox Turbo")
         self.profile_rows = []
-        self.status = tk.StringVar(value="Ready. Choose a tab to generate speech or create subtitles.")
+        self.status = tk.StringVar(value="Ready. Choose a tool in the sidebar to begin.")
         self.device = tk.StringVar(value=self.settings.values.get("device", "Automatic"))
         self.preset = tk.StringVar(value=self.settings.values.get("preset", "Default"))
         if self.preset.get() not in GENERATION_PRESETS:
@@ -61,8 +61,11 @@ class VoiceApp:
         if self.device.get() not in ("Automatic", "NVIDIA GPU", "CPU"):
             self.device.set("Automatic")
         from .ui_layout import build_interface
-        notebook = ttk.Notebook(root)
-        notebook.pack(fill="both", expand=True)
+        from .studio_theme import configure_theme
+        from .studio_shell import StudioShell
+        configure_theme(root)
+        self.shell = StudioShell(self)
+        notebook = self.shell.notebook
         speech_tab = ttk.Frame(notebook)
         subtitle_tab = ttk.Frame(notebook)
         music_tab = ttk.Frame(notebook)
@@ -99,6 +102,7 @@ class VoiceApp:
         from .effects_ui import EffectsPanel
         self.effects_panel = EffectsPanel(self, effects_tab)
         self.notebook = notebook
+        self.shell.finish()
         notebook.bind('<<NotebookTabChanged>>', lambda _: self.editor_panel.stop_playback() if notebook.index('current') != 4 else None, add='+')
         menu = tk.Menu(root)
         menu.add_command(label="Audio file information...", command=self.open_audio_info)

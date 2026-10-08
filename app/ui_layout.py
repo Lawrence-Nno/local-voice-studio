@@ -9,29 +9,13 @@ from .generation import GENERATION_PRESETS
 
 def build_interface(app, parent=None):
     root = app.root
-    bg, ink, muted, blue = "#eef2f7", "#17243b", "#52647a", "#2563eb"
-    root.configure(background=bg)
-    style = ttk.Style(root)
-    style.theme_use("clam")
-    style.configure("TFrame", background=bg)
-    style.configure("TLabel", background=bg, foreground=ink, font=("Segoe UI", 10))
-    style.configure("Card.TFrame", background="white")
-    style.configure("Card.TLabel", background="white", foreground=ink)
-    style.configure("Help.TLabel", background="white", foreground=muted, font=("Segoe UI", 9))
-    style.configure("Heading.TLabel", background="white", foreground=ink, font=("Segoe UI", 12, "bold"))
-    style.configure("Title.TLabel", font=("Segoe UI", 24, "bold"), foreground=ink)
-    style.configure("TButton", font=("Segoe UI", 10), padding=(10, 7), background="#e8eef7", foreground=ink, borderwidth=0)
-    style.map("TButton", background=[("active", "#dce6f4")], foreground=[("disabled", "#8794a5")])
-    style.configure("Primary.TButton", background=blue, foreground="white")
-    style.map("Primary.TButton", background=[("disabled", "#bbc9dd"), ("active", "#1d4ed8")], foreground=[("disabled", "#f4f6fa")])
-    style.configure("TCombobox", padding=5, font=("Segoe UI", 10))
-    style.configure("TEntry", padding=5)
-    style.configure("Horizontal.TProgressbar", background=blue, troughcolor="#e4ebf4", borderwidth=0)
+    from .studio_theme import BG, INK, MUTED, ACCENT, FIELD, BORDER
+    bg, ink, muted, blue = BG, INK, MUTED, ACCENT
 
     panel = ttk.Frame(parent if parent is not None else root, padding=16)
     panel.pack(fill="both", expand=True)
-    ttk.Label(panel, text="Local Voice Studio", style="Title.TLabel").pack(anchor="w")
-    ttk.Label(panel, text="Your voice. Your words.  •  Private speech generation on this computer.").pack(anchor="w", pady=(2, 12))
+    ttk.Label(panel, text="Text to speech", style="Title.TLabel").pack(anchor="w")
+    ttk.Label(panel, text="Create speech with your voice. Everything runs on this computer.").pack(anchor="w", pady=(2, 12))
     footer = ttk.Frame(panel)
     footer.pack(side="bottom", fill="x")
     body = ttk.Frame(panel)
@@ -127,8 +111,8 @@ def build_interface(app, parent=None):
     text_frame = ttk.Frame(speech, style="Card.TFrame")
     text_frame.pack(fill="both", expand=True)
     app.text = tk.Text(text_frame, wrap="word", height=4, font=("Segoe UI", 12), padx=12, pady=12, undo=True,
-                       background="#f8fafc", foreground=ink, insertbackground=blue, relief="flat", highlightthickness=1,
-                       highlightbackground="#dbe3ee", highlightcolor=blue)
+                       background=FIELD, foreground=ink, insertbackground=blue, relief="flat", highlightthickness=1,
+                       highlightbackground=BORDER, highlightcolor=blue)
     scroll = ttk.Scrollbar(text_frame, command=app.text.yview)
     app.text.configure(yscrollcommand=scroll.set)
     app.text.pack(side="left", fill="both", expand=True)

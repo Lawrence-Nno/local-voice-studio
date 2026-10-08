@@ -96,7 +96,7 @@ class EditorPanel:
         row = ttk.Frame(frame)
         row.pack(fill='x', pady=8)
         for title, command in (('Select all / reset', self.reset), ('Preview selection', lambda: self.render(True)), ('Save edited WAV', lambda: self.render(False))):
-            button = ttk.Button(row, text=title, command=command)
+            button = ttk.Button(row, text=title, command=command, style='Primary.TButton' if title=='Save edited WAV' else 'TButton')
             button.pack(side='left', padx=(0, 8))
             self.controls.append(button)
         row = ttk.Frame(frame)
