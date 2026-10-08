@@ -31,14 +31,14 @@ def process(source,destination,original,speed=1,pitch=0,reverb=0,radio=False):
                         if not np.isfinite(block).all():
                             raise ValueError('Invalid audio samples.')
                         frames+=len(block)
-                        if frames>300*rate:
-                            raise ValueError('Voice effects supports clips up to five minutes. Trim longer audio in Audio editor first.')
+                        if frames>600*rate:
+                            raise ValueError('Voice effects supports clips up to ten minutes. Trim longer audio in Audio editor first.')
                         output.write(block)
                 for converted in resampler.resample(None):
                     output.write(converted.to_ndarray().T)
                     frames+=converted.samples
-        if not 0<frames<=300*rate:
-            raise ValueError('Use a non-empty clip up to five minutes long.')
+        if not 0<frames<=600*rate:
+            raise ValueError('Use a non-empty clip up to ten minutes long.')
         audio,_=sf.read(original,dtype='float32',always_2d=True)
         result,gain=apply_effects(audio,rate,speed,pitch,reverb,radio)
         sf.write(destination,result,rate,subtype='PCM_16')

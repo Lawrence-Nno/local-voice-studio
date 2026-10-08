@@ -60,7 +60,7 @@ class EffectsPanel(ConverterPanel):
         button=ttk.Button(settings,text='Reset effects',command=self.reset)
         button.pack(anchor='w',pady=4)
         self.controls.append(button)
-        ttk.Label(frame,text='Speed and pitch work independently. Reverb adds a 0.6-second tail.\nSpeed changes or reverb require new subtitle timings. Extreme settings may sound less natural.\nUse clips up to five minutes. Mono/stereo is retained; rates above 48 kHz are converted to 48 kHz.',wraplength=820).pack(anchor='w',pady=8)
+        ttk.Label(frame,text='Speed and pitch work independently. Reverb adds a 0.6-second tail.\nSpeed changes or reverb require new subtitle timings. Extreme settings may sound less natural.\nUse clips up to ten minutes. Mono/stereo is retained; rates above 48 kHz are converted to 48 kHz.',wraplength=820).pack(anchor='w',pady=8)
         row=ttk.Frame(frame)
         row.pack(fill='x',pady=8)
         self.convert_button=ttk.Button(row,text='Apply voice effects',style='Primary.TButton',command=self.start)
