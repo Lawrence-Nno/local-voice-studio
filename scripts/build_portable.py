@@ -32,7 +32,7 @@ def main():
     print("Bundling app and model weights", flush=True)
     shutil.copytree(ROOT / "app", target / "app", ignore=ignore)
     (target / "scripts").mkdir()
-    for name in ("__init__.py", "check_qwen.py", "check_subtitles.py", "check_music.py", "check_recorder.py", "check_editor.py", "check_recording_subtitles.py", "check_converter.py", "check_cleanup.py", "check_join.py", "check_batch.py", "check_effects.py", "check_audio_info.py"):
+    for name in ("__init__.py", "check_qwen.py", "check_subtitles.py", "check_music.py", "check_recorder.py", "check_editor.py", "check_recording_subtitles.py", "check_converter.py", "check_cleanup.py", "check_join.py", "check_batch.py", "check_effects.py", "check_audio_info.py", "check_countdown.py"):
         source = ROOT / "scripts" / name
         if source.exists():
             shutil.copy2(source, target / "scripts" / name)

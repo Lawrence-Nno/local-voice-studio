@@ -28,7 +28,7 @@ def main():
         while time.monotonic() < end:
             root.update()
             time.sleep(.02)
-    pump(1.2)
+    pump(4.2) # Three-second preparation countdown, then microphone capture.
     panel.pause()
     pump(.2)
     before = panel.recorder.seconds

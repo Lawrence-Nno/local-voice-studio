@@ -16,6 +16,9 @@ class RecorderPanel:
         self.app = app
         self.recorder = Recorder()
         self.output = None
+        self.countdown_remaining = None
+        self.countdown_after = None
+        self.countdown_device = None
         self.devices = {}
         self.device = tk.StringVar()
         self.status = tk.StringVar(value="Choose your microphone and start a recording. Audio stays on this computer.")
@@ -35,7 +38,7 @@ class RecorderPanel:
         self.meter.pack(fill="x", pady=8)
         row = ttk.Frame(frame)
         row.pack(fill="x", pady=12)
-        self.start_button = ttk.Button(row, text="Start recording", style="Primary.TButton", command=self.start)
+        self.start_button = ttk.Button(row, text="Start recording (3-second countdown)", style="Primary.TButton", command=self.start)
         self.start_button.pack(side="left")
         self.pause_button = ttk.Button(row, text="Pause", state="disabled", command=self.pause)
         self.pause_button.pack(side="left", padx=8)
@@ -96,10 +99,38 @@ class RecorderPanel:
         self.app.busy(False)
         self.controls(True)
         self.pause_button.configure(text="Pause")
+        self.pause_button.configure(state="disabled")
+        self.stop_button.configure(text="Cancel countdown")
+        self.countdown_device = self.devices[self.device.get()]
+        self.countdown_remaining = 3
+        self.countdown_tick()
+
+    def countdown_tick(self):
+        self.countdown_after = None
+        if self.countdown_remaining is None:
+            return
+        if self.countdown_remaining > 0:
+            self.timer.set(f"Starting in {self.countdown_remaining}")
+            self.status.set("Get ready. Microphone capture starts after the countdown; no audio is being saved yet.")
+            self.countdown_remaining -= 1
+            self.countdown_after = self.app.root.after(1000, self.countdown_tick)
+            return
+        self.countdown_remaining = None
+        self.stop_button.configure(text="Stop and save")
+        self.pause_button.configure(state="normal")
         self.status.set("Recording… Speak into your microphone. Click Stop and save when finished.")
-        self.recorder.start(*self.devices[self.device.get()])
+        try:
+            self.recorder.start(*self.countdown_device)
+        except Exception as exc:
+            self.app.recording_running = False
+            self.app.busy(False)
+            self.controls(False)
+            self.status.set("Recording could not start; your previous take is still available.")
+            messagebox.showerror("Recording failed", str(exc))
 
     def pause(self):
+        if self.countdown_remaining is not None:
+            return
         if self.recorder.paused.is_set():
             self.recorder.paused.clear()
             self.pause_button.configure(text="Pause")
@@ -110,6 +141,18 @@ class RecorderPanel:
             self.status.set("Paused. This pause will not be included in the saved audio.")
 
     def stop(self):
+        if self.countdown_remaining is not None:
+            if self.countdown_after is not None:
+                self.app.root.after_cancel(self.countdown_after)
+            self.countdown_after = None
+            self.countdown_remaining = None
+            self.countdown_device = None
+            self.app.recording_running = False
+            self.app.busy(False)
+            self.controls(False)
+            self.stop_button.configure(text="Stop and save")
+            self.status.set("Countdown cancelled. No new audio was recorded; your previous take is still available.")
+            return
         self.recorder.stop.set()
         self.stop_button.configure(state="disabled")
         self.pause_button.configure(state="disabled")
@@ -117,7 +160,8 @@ class RecorderPanel:
 
     def poll(self):
         seconds = self.recorder.seconds
-        self.timer.set(f"{int(seconds // 60):02d}:{seconds % 60:04.1f}")
+        if self.countdown_remaining is None:
+            self.timer.set(f"{int(seconds // 60):02d}:{seconds % 60:04.1f}")
         self.meter.configure(value=self.recorder.level)
         try:
             kind, value = self.recorder.events.get_nowait()

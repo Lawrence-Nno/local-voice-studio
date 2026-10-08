@@ -15,7 +15,7 @@ Audio processing and model inference run locally. Internet access is needed for 
 - **Generated speech refinement:** Natural polish or Brighter speech with adjustable strength, original/polished comparison, and separate exports.
 - **Audio to subtitles:** transcribe imported audio or align the saved script of generated speech; local Whisper Small, automatic/English language selection, CPU/GPU options, editable SRT text/timings, validation, and UTF-8 export.
 - **Background music:** import music, adjust voice/music volume, automatic ducking, music start position, optional looping, music fades, preview, peak protection, and mixed WAV export with license/credit notes.
-- **Voice recorder:** microphone selection/refresh, level meter, recorded-time display, start/pause/resume/stop, separate WAV takes, playback/export, reference-cleanup handoff, and recording-to-subtitles shortcut.
+- **Voice recorder:** microphone selection/refresh, cancellable three-second countdown, level meter, recorded-time display, start/pause/resume/stop, separate WAV takes, playback/export, reference-cleanup handoff, and recording-to-subtitles shortcut.
 - **Audio editor:** waveform display and drag selection, exact start/end times, trimming, volume, fades, selection preview, source-preserving WAV save/export, and reference handoff.
 - **Clip joining:** add whole files or edited selections, reorder/remove/clear clips, choose output rate/channels and optional gaps, preview, and save one joined WAV.
 - **Format converter:** WAV, MP3, FLAC, M4A/AAC, and OGG/Opus output; sample-rate/channel options, compressed bitrates, cancellation, and separate-file export.
@@ -85,7 +85,9 @@ Use music licensed for your intended content and retain required attribution. Th
 
 ## Voice recorder
 
-Choose a microphone and **Start recording**. Watch the peak meter; lower Windows input volume or move away if it reaches 100%. **Pause / Resume** skips paused audio. **Stop and save** creates a mono PCM16 WAV at the microphone's default sample rate. Takes stop automatically at one hour.
+Choose a microphone and **Start recording (3-second countdown)**. The timer displays **Starting in 3**, **2**, then **1** before microphone capture begins. During preparation, **Cancel countdown** stops the pending recording and keeps the previous take; no countdown audio is recorded. Pause becomes available when capture starts.
+
+Watch the peak meter; lower Windows input volume or move away if it reaches 100%. **Pause / Resume** skips paused audio. **Stop and save** creates a mono PCM16 WAV at the microphone's default sample rate. Takes stop automatically at one hour.
 
 Preview/export the take, send it to reference cleanup, or send it to subtitles. For cloning, record 6-60 seconds. If no microphone appears, connect one, check Windows microphone permissions, and refresh the device list.
 
