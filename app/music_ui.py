@@ -138,7 +138,7 @@ class MusicPanel:
             self.progress.stop()
 
     def start(self):
-        if self.app.editor_running or self.app.recording_running or self.active() or self.app.subtitle_running or (self.app.worker and self.app.worker.is_alive()):
+        if self.app.conversion_running or self.app.editor_running or self.app.recording_running or self.active() or self.app.subtitle_running or (self.app.worker and self.app.worker.is_alive()):
             messagebox.showinfo("Job running", "Wait for the current audio job to finish first.")
             return
         try:

@@ -219,3 +219,11 @@ Validation: `python -m scripts.check_editor` exercises waveform loading, trim/fa
 ### Recording to subtitles
 
 After **Stop and save** in Voice recorder, click **Create subtitles from recording**. The app switches to **Audio to subtitles** with the completed take selected for local transcription. Choose language/device if needed, then click **Create subtitles** and review/export the SRT. Previous subtitle edits remain visible and labelled with their original source until a new transcription succeeds.
+
+## Format converter
+
+Open **Format converter** and choose an imported file, latest recorded take, selected generated speech, or last saved edit. Choose **WAV**, **MP3**, **FLAC**, **M4A (AAC)**, or **OGG (Opus)**, then set sample rate, mono/stereo/source channels and bitrate where applicable. Click **Convert audio**, then **Export converted file...**. Completed conversions are stored in `data/converted`; exports use the last completed result. Cancellation and errors preserve the previous result and source file.
+
+WAV and FLAC encode PCM16 audio; MP3, AAC and Opus are lossy. Opus always uses 48 kHz. Converting a compressed source cannot recover lost detail. Audio from the first stream is converted; video, artwork and metadata are not copied. Multichannel audio requires an explicit mono/stereo downmix. The existing bundled PyAV runtime handles conversion offline without models or additional downloads.
+
+Validation: `python -m scripts.check_converter` checks all five real encoders/decoders, round trips, duration/channels/resampling, export, cancellation, invalid inputs, source protection and native layout.

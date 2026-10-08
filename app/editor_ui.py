@@ -84,7 +84,7 @@ class EditorPanel:
         app.root.after(100, self.poll)
 
     def occupied(self):
-        return self.app.editor_running or self.app.recording_running or self.app.subtitle_running or self.app.mix_running or (self.app.worker and self.app.worker.is_alive())
+        return self.app.conversion_running or self.app.editor_running or self.app.recording_running or self.app.subtitle_running or self.app.mix_running or (self.app.worker and self.app.worker.is_alive())
 
     def run(self, operation):
         if self.occupied():
