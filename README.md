@@ -11,6 +11,7 @@ Audio processing and model inference run locally. Internet access is needed for 
 ## Complete feature list
 
 - **Text to speech and voice cloning:** Chatterbox Turbo and Qwen3-TTS 1.7B Base, persistent voice profiles, saved reference versions, remembered model/voice selection, longer-text chunking, delivery presets, optional seed, playback, and WAV export.
+- **Pronunciation dictionary:** saved word/phrase pronunciation spellings, case-insensitive whole-word matching, enable/disable switch, script preview, and generation snapshots for both voice models. Original scripts and subtitle spelling are preserved.
 - **Reference preparation before cloning:** select a section, trim quiet edges, adjust volume, optional gentle noise reduction, and compare original/prepared recordings.
 - **Generated speech refinement:** Natural polish or Brighter speech with adjustable strength, original/polished comparison, and separate exports.
 - **Audio to subtitles:** transcribe imported audio or align the saved script of generated speech; local Whisper Small, automatic/English language selection, CPU/GPU options, editable SRT text/timings, validation, and UTF-8 export.
@@ -27,6 +28,14 @@ Audio processing and model inference run locally. Internet access is needed for 
 - **Portable Windows launch:** native EXE, custom application icon, bundled runtimes/models, and a desktop-shortcut creator.
 
 ## Launch and transfer
+
+### Pronunciation dictionary
+
+Open **Pronunciation dictionary...** in the top menu. Enter a written word or phrase and a readable pronunciation spelling (for example, `SQL` → `sequel`), click **Add / update entry**, then **Save dictionary**. Select an existing entry to edit it or remove it. Preview shows how the current script will be read using the entries in the window; save before generating speech. Test a short sentence and adjust the spelling if necessary: these are text hints, not guaranteed phoneme control or model training.
+
+The switch disables all hints without deleting them. Entries apply to future personal-voice and generic-test generations, never reference transcripts. Longest matching phrases win and replacements run once, without cascading. Phrase matches are kept together when splitting long scripts. Dictionary settings are snapshotted when generation starts, so editing them cannot change an in-progress job. Saved job metadata retains original and spoken section text; saved-script subtitles use the original spelling, though alignment timings should still be reviewed.
+
+Entries live in `data/pronunciation.json` within the app copy you use. Source and portable copies have separate dictionaries. Moving the whole portable folder retains its dictionary; portable code updates preserve it.
 
 ### Portable app
 

@@ -101,12 +101,24 @@ class VoiceApp:
         self.notebook = notebook
         menu = tk.Menu(root)
         menu.add_command(label="Audio file information...", command=self.open_audio_info)
+        menu.add_command(label="Pronunciation dictionary...", command=self.open_pronunciation)
         root.configure(menu=menu)
         self.audio_info_dialog = None
+        self.pronunciation_dialog = None
         self.refresh_profiles()
         self.select_model()
         root.protocol("WM_DELETE_WINDOW", self.close)
         root.after(100, self.poll)
+
+    def open_pronunciation(self):
+        if self.pronunciation_dialog and self.pronunciation_dialog.winfo_exists():
+            self.pronunciation_dialog.lift()
+            return
+        try:
+            from .pronunciation_ui import PronunciationDialog
+            self.pronunciation_dialog = PronunciationDialog(self)
+        except (ValueError, OSError) as exc:
+            messagebox.showerror('Cannot open pronunciation dictionary', str(exc))
 
     def open_audio_info(self):
         if self.audio_info_dialog and self.audio_info_dialog.winfo_exists():
@@ -274,6 +286,8 @@ class VoiceApp:
             if seed is not None and not 0 <= seed <= 2**32 - 1:
                 raise ValueError("Seed must be between 0 and 4294967295, or blank.")
             generation_options = {"preset": self.preset.get(), "seed": seed}
+            from .pronunciation import load
+            generation_options['pronunciation'] = load()
             chosen_model = self.model_choice.get()
             transcript = self.reference_transcript(profile) if profile else ""
             mode, strength = self.polish_mode.get(), self.polish_strength.get()

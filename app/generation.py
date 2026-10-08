@@ -22,7 +22,7 @@ class Cancelled(Exception):
     pass
 
 
-def chunk_text(text: str, limit: int = 240) -> list[str]:
+def chunk_text(text: str, limit: int = 240, protected_pattern: str | None = None) -> list[str]:
     text = " ".join(text.split())
     if not text:
         raise ValueError("Enter some text first.")
@@ -35,6 +35,11 @@ def chunk_text(text: str, limit: int = 240) -> list[str]:
         split = boundaries[-1].end() if boundaries else prefix.rfind(" ")
         if split <= 0:
             split = limit
+        if protected_pattern:
+            for match in re.finditer(protected_pattern, text, re.IGNORECASE):
+                if match.start() < split < match.end():
+                    split = match.start() if match.start() else match.end()
+                    break
         chunks.append(text[:split].strip())
         text = text[split:].lstrip()
     if text:
@@ -52,7 +57,13 @@ def run_job(engine, text: str, profile: dict | None, reference: Path | None,
     if seed is not None and (not isinstance(seed, int) or not 0 <= seed <= 2**32 - 1):
         raise ValueError("Seed must be a whole number from 0 to 4294967295, or blank.")
     presets = QWEN_PRESETS if getattr(engine, "model_id", "").startswith("Qwen") else GENERATION_PRESETS
-    chunks = chunk_text(text)
+    from .pronunciation import apply, validate, pattern
+    dictionary = validate(options.get('pronunciation', {'enabled': False, 'entries': {}}))
+    protected = pattern(dictionary['entries']) if dictionary['enabled'] and dictionary['entries'] else None
+    chunks = chunk_text(text, protected_pattern=protected)
+    spoken_chunks = [apply(chunk, dictionary) for chunk in chunks]
+    if sum(map(len, spoken_chunks)) > 20000:
+        raise ValueError('Pronunciation replacements exceed the 20,000-character limit. Shorten the script or replacements.')
     job_id = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:8]
     directory = data / "jobs" / job_id
     directory.mkdir(parents=True)
@@ -60,6 +71,7 @@ def run_job(engine, text: str, profile: dict | None, reference: Path | None,
     outputs.mkdir(parents=True, exist_ok=True)
     metadata = {"id": job_id, "state": "loading", "created": datetime.now(timezone.utc).isoformat(),
                 "text": text, "section_texts": chunks,
+                "spoken_section_texts": spoken_chunks, "pronunciation_dictionary": dictionary,
                 "profile_id": profile["id"] if profile else None,
                 "profile_version": profile["version"] if profile else None,
                 "generic_test": profile is None, "model": getattr(engine, "model_id", "Chatterbox Turbo"),
@@ -86,7 +98,7 @@ def run_job(engine, text: str, profile: dict | None, reference: Path | None,
             if torch.cuda.is_available():
                 torch.cuda.manual_seed_all(seed)
         paths, rate = [], None
-        for index, chunk in enumerate(chunks, 1):
+        for index, chunk in enumerate(spoken_chunks, 1):
             if cancel.is_set():
                 raise Cancelled()
             progress(f"Generating section {index} of {len(chunks)} on {engine.device}", index - 1, len(chunks))
