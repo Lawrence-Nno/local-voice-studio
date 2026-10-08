@@ -16,6 +16,8 @@ class EditorPanel:
     def __init__(self, app, parent):
         self.app = app
         self.source = self.output = self.output_source = None
+        self.output_sources = ()
+        self.join_dialog = None
         self.info = None
         self.events = queue.Queue()
         self.start_time = tk.StringVar(value='0')
@@ -75,6 +77,9 @@ class EditorPanel:
         self.export_button.pack(side='left', padx=(0, 8))
         self.reference_button = ttk.Button(row, text='Use saved edit as voice reference', command=self.use_reference, state='disabled')
         self.reference_button.pack(side='left')
+        self.join_button = ttk.Button(row, text='Join clips...', command=self.open_join)
+        self.join_button.pack(side='left', padx=8)
+        self.controls.append(self.join_button)
         ttk.Label(frame, text='The highlighted section is kept; audio outside it is removed. Preview includes your volume and fades.\nSaving preserves the source sample rate and channels. Export uses the last saved edit; changed settings require saving again.', wraplength=820).pack(anchor='w', pady=8)
         self.progress = ttk.Progressbar(frame, mode='indeterminate')
         self.progress.pack(fill='x', pady=6)
@@ -85,6 +90,36 @@ class EditorPanel:
 
     def occupied(self):
         return self.app.conversion_running or self.app.editor_running or self.app.recording_running or self.app.subtitle_running or self.app.mix_running or (self.app.worker and self.app.worker.is_alive())
+
+    def open_join(self):
+        if self.join_dialog and self.join_dialog.winfo_exists():
+            self.join_dialog.lift()
+            return
+        from .join_ui import JoinDialog
+        self.join_dialog = JoinDialog(self)
+
+    def join_clips(self, clips, rate, channels, gap, preview):
+        import json
+        import subprocess
+        from .storage import ROOT
+        interpreter = ROOT / 'runtime/qwen/python.exe'
+        if not interpreter.is_file():
+            interpreter = ROOT / '.venv-qwen/Scripts/python.exe'
+        if not interpreter.is_file():
+            raise ValueError('Install the Qwen/subtitle audio runtime first.')
+        path = DATA / ('editor-previews' if preview else 'edits') / (uuid.uuid4().hex + '.wav')
+        sources = tuple(Path(clip['source']) for clip in clips)
+        winsound.PlaySound(None, 0)
+        def operation():
+            request = {'clips': clips, 'destination': str(path), 'rate': rate, 'channels': channels, 'gap': gap}
+            result = subprocess.run([str(interpreter), '-E', '-s', '-m', 'app.clip_joining'], cwd=ROOT,
+                input=json.dumps(request)+'\n', text=True, encoding='utf-8', capture_output=True,
+                creationflags=subprocess.CREATE_NO_WINDOW, check=True)
+            response = json.loads(result.stdout)
+            if not response['ok']:
+                raise ValueError(response['error'])
+            return ('join_preview' if preview else 'joined', path, sources, response['result'])
+        self.run(operation)
 
     def run(self, operation):
         if self.occupied():
@@ -208,14 +243,16 @@ class EditorPanel:
                 self.status.set('Audio loaded. Drag across the waveform or enter start and end times.')
             else:
                 action, path, source, info = result
-                self.status.set(('Playing selection.' if action == 'preview' else 'Saved edit: ' + path.name) + (' Volume reached clipping; lower it and save again.' if info['clipped'] else ''))
-                if action == 'preview':
+                self.status.set(('Playing joined clips.' if action == 'join_preview' else 'Playing selection.' if action == 'preview' else 'Saved joined WAV: ' + path.name if action == 'joined' else 'Saved edit: ' + path.name) + (' Volume reached clipping; lower it and save again.' if info['clipped'] else ''))
+                if action in ('preview', 'join_preview'):
                     try:
                         winsound.PlaySound(str(path), winsound.SND_FILENAME | winsound.SND_ASYNC)
                     except RuntimeError as exc:
                         messagebox.showerror('Playback failed', str(exc))
                 else:
-                    self.output, self.output_source = path, source
+                    self.output = path
+                    self.output_sources = source if isinstance(source, tuple) else (source,)
+                    self.output_source = self.output_sources[0]
             for button in (self.export_button, self.reference_button):
                 button.configure(state='normal' if self.output else 'disabled')
         self.app.root.after(100, self.poll)
@@ -225,7 +262,7 @@ class EditorPanel:
         if filename:
             try:
                 destination = Path(filename).resolve()
-                if destination in {p.resolve() for p in (self.source, self.output_source) if p}:
+                if destination in {p.resolve() for p in (self.source, self.output_source, *self.output_sources) if p}:
                     raise ValueError('Choose another filename to preserve your original audio.')
                 if destination != self.output.resolve():
                     shutil.copyfile(self.output, destination)

@@ -212,7 +212,7 @@ Validation: `python -m scripts.check_recorder` performs a short real microphone 
 
 Open **Audio editor**, then **Open audio...**, **Use latest recording**, or **Use selected generated speech**. WAV, FLAC, OGG, and MP3 inputs are supported by the bundled decoder. Drag across the waveform or enter exact start/end seconds: the highlighted section is kept. Adjust volume and optional fade-in/fade-out, then **Preview selection** or **Save edited WAV**. The source stays unchanged; edits are stored in `data/edits` as PCM16 WAV with the original sample rate and channels.
 
-**Export saved edit...** exports the last saved result. If you change settings, save again before exporting. **Use saved edit as voice reference** opens the reference-cleanup workflow. Inputs may be mono/stereo and at most one hour; this version trims one continuous selection. It does not join clips or remove sections from the middle. Trimming changes timing, so recreate subtitles for the edited audio.
+**Export saved edit...** exports the last saved result. If you change settings, save again before exporting. **Use saved edit as voice reference** opens the reference-cleanup workflow. Inputs may be mono/stereo and at most one hour; trimming keeps one continuous selection. To remove a middle section, add the wanted sections to the join list and join them. Trimming changes timing, so recreate subtitles for the edited audio.
 
 Validation: `python -m scripts.check_editor` exercises waveform loading, trim/fades, preview, export, source protection, failed-edit recovery and native layout.
 
@@ -235,3 +235,9 @@ Open **Audio cleanup**, import audio or select a saved recording/generated clip,
 Files remain local in `data/cleaned`. Mono/stereo channels, source rate and duration are preserved; output is PCM16 WAV. Use audio up to one hour at 8-192 kHz. Noise reduction estimates steady noise from quiet spectral frames throughout the source; start mild and compare speech quality. It is not voice separation and cannot reliably remove music, other speakers or restore clipped audio. Set reduction to zero, turn off rumble and automatic leveling, and adjust volume for volume-only processing.
 
 Validation: `python -m scripts.check_cleanup` verifies measured synthetic noise attenuation, exact bypass, duration/rate/stereo retention, peak protection, source preservation, comparison playback handoff, export, cancellation and native layout.
+
+### Join clips
+
+Click **Join clips...** in Audio editor. Add WAV/FLAC/OGG/MP3 files, or **Add current edited selection** to capture the current trim, volume and fades. Repeat for additional sections; move clips up/down, remove them, or clear the list. Choose output rate and Mono/Stereo, plus an optional 0-10 second gap. **Preview joined clips** plays the sequence; **Save joined WAV** makes it the last saved edit. Export it from the Audio editor. Sources remain unchanged and protected against export overwrite.
+
+Joining supports 2-50 clips and up to one hour of output. Mono/stereo conversion uses the bundled audio library and can change channel amplitude. No crossfade or multitrack overlap is applied. Recreate subtitles for the joined output. Validation: `python -m scripts.check_join`.
