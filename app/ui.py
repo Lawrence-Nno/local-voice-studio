@@ -25,8 +25,8 @@ class VoiceApp:
         if icon.exists():
             root.iconbitmap(default=str(icon))
         scale = max(1.0, root.winfo_fpixels("1i") / 96)
-        width = min(round(1220 * scale), root.winfo_screenwidth() - 80)
-        height = min(round(820 * scale), root.winfo_screenheight() - 120)
+        width = min(round(1050 * scale), root.winfo_screenwidth() - 80)
+        height = min(round(650 * scale), root.winfo_screenheight() - 120)
         root.geometry(f"{width}x{height}")
         root.minsize(min(round(1050 * scale), width), min(round(650 * scale), height))
         self.events = queue.Queue()
@@ -137,8 +137,8 @@ class VoiceApp:
         self.test_button.configure(state="disabled" if qwen else "normal")
         self.transcript_button.configure(state="normal" if qwen else "disabled")
         self.model_description.set(
-            "Qwen 1.7B: audio-only cloning by default. Add an exact reference transcript for fuller cloning."
-            if qwen else "Turbo: fast English voice cloning. No reference transcript needed; built-in test voice available.")
+            "Qwen: audio-only by default; add the exact reference transcript for full cloning."
+            if qwen else "Turbo: fast English cloning; no transcript needed. Built-in test voice available.")
 
     def select_model(self, _event=None):
         self.update_model_controls()
@@ -448,10 +448,15 @@ class VoiceApp:
         os.startfile(directory)
 
     def close(self):
+        if getattr(self, "closing", False):
+            return
         if (self.worker and self.worker.is_alive()) or self.subtitles.active() or self.mix_running or self.recording_running or self.editor_running or self.conversion_running or self.batch_running:
             messagebox.showinfo("Generation is running", "Cancel the active job in its tab and wait for it to finish before closing.")
             return
-        winsound.PlaySound(None, 0)
-        self.engine.unload()
-        self.editor_panel.stop_playback()
+        from .shutdown import start_cleanup
+        self.closing = True
+        # Capture audio-only methods: stop_playback also touches Tk widgets.
+        actions = (lambda: winsound.PlaySound(None, 0),
+                   self.editor_panel.playback.stop, self.engine.unload)
         self.root.destroy()
+        self.shutdown_worker = start_cleanup(*actions)

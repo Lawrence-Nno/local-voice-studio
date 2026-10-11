@@ -63,27 +63,36 @@ class AudioInfoDialog(tk.Toplevel):
         self.title('Audio file information')
         scale=max(1,self.winfo_fpixels('1i')/96)
         width=min(round(740*scale),self.winfo_screenwidth()-80)
-        height=min(round(610*scale),self.winfo_screenheight()-120)
+        height=min(round(550*scale),self.winfo_screenheight()-120)
         self.geometry(f'{width}x{height}')
         self.lift()
         self.minsize(width,height)
         frame=ttk.Frame(self,padding=16)
         frame.pack(fill='both',expand=True)
         ttk.Label(frame,text='Audio file information',style='Title.TLabel').pack(anchor='w')
-        ttk.Label(frame,text='Inspect a local file or audio already loaded in the app. No audio is changed.',wraplength=700).pack(anchor='w',pady=8)
+        ttk.Label(frame,text='Inspect a file or audio loaded in the app.',wraplength=700).pack(anchor='w',pady=(4,8))
         self.choose_button=ttk.Button(frame,text='Choose audio file...',command=self.choose)
         self.choose_button.pack(anchor='w',pady=6)
         ttk.Label(frame,text='Audio currently loaded in the app').pack(anchor='w',pady=(8,4))
         self.combo=ttk.Combobox(frame,textvariable=self.selected,values=list(self.choices),state='readonly')
         self.combo.pack(fill='x')
         self.combo.bind('<<ComboboxSelected>>',lambda _:self.load(self.choices[self.selected.get()]))
-        details=ttk.Frame(frame)
+        details=ttk.Frame(frame,style='Card.TFrame',padding=12)
         details.pack(fill='both',expand=True,pady=12)
-        self.text=tk.Text(details,height=10,wrap='word',font=('Segoe UI',11),padx=12,pady=12,state='disabled')
-        scroll=ttk.Scrollbar(details,command=self.text.yview)
-        self.text.configure(yscrollcommand=scroll.set)
-        self.text.pack(side='left',fill='both',expand=True)
-        scroll.pack(side='right',fill='y')
+        details.columnconfigure(1,weight=1)
+        self.detail_values={}
+        for row,key in enumerate(('File','Duration','Format','Codec / sample type','Sample rate',
+                                  'Channels','File size','Duration source','Full path')):
+            ttk.Label(details,text=key,style='Help.TLabel').grid(row=row,column=0,
+                         sticky='nw',padx=(0,18),pady=4)
+            variable=tk.StringVar(value='—')
+            self.detail_values[key]=variable
+            if key=='Full path':
+                value=ttk.Entry(details,textvariable=variable,state='readonly')
+            else:
+                value=ttk.Label(details,textvariable=variable,style='Card.TLabel',wraplength=450)
+                value.bind('<Configure>',lambda e:e.widget.configure(wraplength=max(100,e.width)))
+            value.grid(row=row,column=1,sticky='ew',pady=4)
         self.copy_button=ttk.Button(frame,text='Copy information',command=self.copy,state='disabled')
         self.copy_button.pack(anchor='w',pady=6)
         self.status=tk.StringVar(value='Choose a file to inspect.')
@@ -111,9 +120,8 @@ class AudioInfoDialog(tk.Toplevel):
         self.combo.configure(state='disabled')
         self.copy_button.configure(state='disabled')
         self.info=None
-        self.text.configure(state='normal')
-        self.text.delete('1.0','end')
-        self.text.configure(state='disabled')
+        for variable in self.detail_values.values():
+            variable.set('—')
         self.status.set('Reading file information...')
         interpreter=ROOT/'runtime/qwen/python.exe'
         if not interpreter.is_file():
@@ -142,9 +150,8 @@ class AudioInfoDialog(tk.Toplevel):
             self.combo.configure(state='readonly')
             if kind=='complete':
                 self.info=value
-                self.text.configure(state='normal')
-                self.text.insert('1.0','\n\n'.join(f'{key}: {value}' for key,value in describe(self.info).items()))
-                self.text.configure(state='disabled')
+                for key,detail in describe(self.info).items():
+                    self.detail_values[key].set(detail)
                 self.copy_button.configure(state='normal')
                 self.status.set('Information read successfully. Compressed audio durations can include codec padding.')
             else:

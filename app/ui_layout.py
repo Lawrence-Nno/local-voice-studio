@@ -43,7 +43,7 @@ def build_interface(app, parent=None):
         label.bind("<Configure>", lambda e: label.configure(wraplength=max(100, e.width)))
         return label
 
-    voices = card(side, "1  Your voice reference", "BEFORE GENERATION\nPrepare a recording for cloning your voice.")
+    voices = card(side, "1  Your voice reference", "Choose or add a recording to clone.")
     app.voice = ttk.Combobox(voices, state="readonly", width=18)
     app.voice.pack(fill="x")
     app.voice.bind("<<ComboboxSelected>>", app.select_voice)
@@ -53,18 +53,18 @@ def build_interface(app, parent=None):
     app.replace_button.pack(fill="x", pady=(0, 5))
     app.cleanup_button = ttk.Button(voices, text="Clean selected voice reference…", command=app.clean_saved_reference)
     app.cleanup_button.pack(fill="x")
-    help_text(voices, "Trim silence, balance volume, or reduce noise. Originals are kept. Use a clear 10-15 second WAV.")
+    help_text(voices, "Use a clear 10-15 second WAV. Cleanup trims silence, balances volume and optionally reduces noise; originals are kept.")
 
-    polish = card(side, "3  Refine generated audio", "AFTER GENERATION\nPolish finished speech. Saved references stay unchanged.")
+    polish = card(side, "3  Refine generated audio", "Polish speech output; voice references stay unchanged.")
     app.polishes = ttk.Combobox(polish, state="readonly", textvariable=app.polish_mode, values=POLISH_MODES, width=18)
     app.polishes.pack(fill="x")
     description = tk.StringVar()
     label = help_text(polish, "")
     label.configure(textvariable=description)
     descriptions = {
-        "Original": "Keep the generated audio as it is. No automatic polish is applied.",
-        "Natural polish": "Gently balance volume and reduce low-frequency rumble for smoother speech.",
-        "Brighter speech": "Apply natural polish with extra presence for a clearer, brighter tone.",
+        "Original": "No polish; keep the generated sound.",
+        "Natural polish": "Balance volume and reduce low rumble.",
+        "Brighter speech": "Natural polish with extra vocal presence.",
     }
     def update_description(*_):
         description.set(descriptions[app.polish_mode.get()])
@@ -80,9 +80,9 @@ def build_interface(app, parent=None):
     app.strength_slider.pack(fill="x", pady=5)
     app.polish_button = ttk.Button(polish, text="Reapply polish to latest audio", state="disabled", command=app.apply_polish)
     app.polish_button.pack(fill="x", pady=(5, 0))
-    help_text(polish, "Polish runs after generation. Reapply to compare settings. The original is kept.")
+    help_text(polish, "Applied after generation. Reapply to try new settings; the original is kept.")
 
-    speech = card(main, "2  Write and generate", "Enter English text below and generate speech with your selected model and voice.")
+    speech = card(main, "2  Write and generate", "Enter English text, then generate with your chosen voice and model.")
     speech.pack_configure(fill="both", expand=True)
     model_row = ttk.Frame(speech, style="Card.TFrame")
     model_row.pack(fill="x", pady=(0, 4))
@@ -107,7 +107,12 @@ def build_interface(app, parent=None):
     app.seed_entry = ttk.Entry(options, textvariable=app.seed, width=10)
     for col, widget in enumerate((app.presets, app.devices, app.seed_entry)):
         widget.grid(row=1, column=col, sticky="ew", padx=(0, 8), pady=(4, 0))
-    help_text(speech, "Steady uses less variation; Expressive uses more. Automatic prefers the GPU. Leave seed blank for variety; reuse a number for comparisons.")
+    for col, hint in enumerate(("Steady: less variation.\nExpressive: more variation.",
+                                "Automatic prefers the GPU.",
+                                "Blank: varied results.\nReuse a number to compare.")):
+        label = ttk.Label(options, text=hint, style="Help.TLabel", wraplength=180)
+        label.grid(row=2, column=col, sticky="new", padx=(0,8), pady=(4,6))
+        label.bind("<Configure>", lambda e: e.widget.configure(wraplength=max(100,e.width)))
     text_frame = ttk.Frame(speech, style="Card.TFrame")
     text_frame.pack(fill="both", expand=True)
     app.text = tk.Text(text_frame, wrap="word", height=4, font=("Segoe UI", 12), padx=12, pady=12, undo=True,
@@ -133,7 +138,7 @@ def build_interface(app, parent=None):
     app.cancel_button = ttk.Button(controls, text="Cancel", state="disabled", command=app.request_cancel)
     app.cancel_button.pack(side="left")
 
-    result = card(main, "Listen and export", "Choose Original or Polished to compare. Playback and export use the selected version.")
+    result = card(main, "Listen and export", "Select Original or Polished. Play and export use that version.")
     versions = ttk.Frame(result, style="Card.TFrame")
     versions.pack(fill="x", pady=(0, 8))
     ttk.Label(versions, text="Audio version", style="Card.TLabel").pack(side="left", padx=(0, 8))

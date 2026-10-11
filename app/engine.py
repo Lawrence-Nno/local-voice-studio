@@ -42,6 +42,9 @@ class SpeechEngine:
         self.device = device
 
     def unload(self) -> None:
+        if self.model is None:
+            self.device = None
+            return
         self.model = None
         self.device = None
         import gc

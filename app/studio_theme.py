@@ -2,13 +2,13 @@
 import tkinter as tk
 from tkinter import ttk
 
-BG = '#111820'
-PANEL = '#1b2531'
-FIELD = '#0e151e'
+BG = '#071b2e'
+PANEL = '#102b43'
+FIELD = '#061727'
 INK = '#e6edf5'
 MUTED = '#9caec2'
-ACCENT = '#448cff'
-BORDER = '#314154'
+ACCENT = '#0785ff'
+BORDER = '#244b68'
 
 
 def configure_theme(root):
@@ -61,6 +61,29 @@ def configure_theme(root):
                   indicatorbackground=[('selected',ACCENT),('active','#32475f')])
     # Use explicit images: clam's filled square was ambiguous on the dark palette.
     from PIL import Image, ImageDraw, ImageTk
+    # Nine-slice image borders give ttk real rounded surfaces without changing
+    # button commands, keyboard focus, or accessibility semantics.
+    button_images = []
+    for name, colors in (
+        ('Studio.Button', ('#16334c', '#204762', '#102b43', '#0d2438')),
+        ('Studio.Primary', (ACCENT, '#2698ff', '#006bd1', '#183752')),
+    ):
+        variants = []
+        for color in colors:
+            surface = Image.new('RGBA', (32,32), (0,0,0,0))
+            ImageDraw.Draw(surface).rounded_rectangle((1,1,30,30), radius=7,
+                                                      fill=color, outline=BORDER)
+            variants.append(ImageTk.PhotoImage(surface, master=root))
+        button_images.extend(variants)
+        normal, hover, pressed, disabled = variants
+        style.element_create(name, 'image', normal, ('disabled',disabled),
+                             ('pressed',pressed), ('active',hover), border=9, sticky='nswe')
+        target = 'TButton' if name=='Studio.Button' else 'Primary.TButton'
+        style.layout(target, [(name, {'sticky':'nswe','children':[
+            ('Button.padding', {'sticky':'nswe','children':[
+                ('Button.focus', {'sticky':'nswe','children':[
+                    ('Button.label', {'sticky':'nswe'})]})]})]})])
+    root.studio_button_images = button_images
     size = round(18 * max(1,root.winfo_fpixels('1i')/96))
     images = []
     for checked, disabled in ((False,False),(True,False),(False,True),(True,True)):
@@ -97,14 +120,17 @@ def configure_theme(root):
     style.map('Treeview.Heading', background=[('active','#263548')])
     style.configure('Studio.TNotebook', background=BG, borderwidth=0, tabmargins=0)
     style.layout('Studio.TNotebook.Tab', [])
-    style.configure('Sidebar.TFrame', background='#0b1119')
-    style.configure('Sidebar.TLabel', background='#0b1119', foreground=MUTED, font=('Segoe UI',9))
-    style.configure('SidebarGroup.TLabel', background='#202d3d', foreground='#b8c9dc',
+    style.configure('Sidebar.TFrame', background='#061727')
+    style.configure('Sidebar.TLabel', background='#061727', foreground=MUTED, font=('Segoe UI',9))
+    style.configure('SidebarGroup.TLabel', background='#102b43', foreground='#8dccf5',
                     font=('Segoe UI',8,'bold'), padding=(10,5))
-    style.configure('Brand.TLabel', background='#0b1119', foreground=INK, font=('Segoe UI',13,'bold'))
-    style.configure('Nav.TButton', background='#0b1119', foreground=MUTED, anchor='w', padding=(12,8))
+    style.configure('Brand.TLabel', background='#061727', foreground=INK, font=('Segoe UI',13,'bold'))
+    style.configure('Nav.TButton', background='#061727', foreground=MUTED, anchor='w', padding=(10,6))
+    style.layout('Nav.TButton', [('Button.border', {'sticky':'nswe','border':'1','children':[
+        ('Button.padding', {'sticky':'nswe','children':[
+            ('Button.label', {'sticky':'nswe'})]})]})])
     style.map('Nav.TButton', background=[('active','#1b2c40')], foreground=[('active',INK)])
-    style.configure('Selected.Nav.TButton', background='#183454', foreground='#dcebff')
+    style.configure('Selected.Nav.TButton', background='#0c4972', foreground='#ffffff')
     style.map('Selected.Nav.TButton', background=[('active','#21446b')], foreground=[('active','#ffffff')])
 
 

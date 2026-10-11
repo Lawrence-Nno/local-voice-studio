@@ -221,6 +221,12 @@ The existing automated suite has 27 tests. Feature acceptance scripts verify rea
 
 Some acceptance scripts capture a short microphone sample, play test audio, or require a previously generated speech file. Test recordings stay local.
 
+## Closing the app
+
+The Tkinter interface uses a dark navy studio theme with rounded action buttons, sidebar icons, a highlighted active page, and a larger waveform editor with a time ruler, selection boundaries, and separate selection and finishing panels.
+
+When no job is running, clicking X closes the window immediately. Audio and model resources are released in the background; the process may remain briefly in Task Manager until cleanup finishes. Active jobs must be cancelled or completed before closing.
+
 ## Model and dependency licenses
 
 Third-party models/libraries retain their own licenses. Chatterbox Turbo is MIT licensed and its built-in PerTh watermarking is retained; Qwen3-TTS is Apache-2.0 licensed; the Whisper model specification records MIT licensing. Dependency license files are retained in the bundled runtimes.

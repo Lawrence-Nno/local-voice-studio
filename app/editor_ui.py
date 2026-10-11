@@ -54,8 +54,10 @@ class EditorPanel:
         self.redo_button.pack(side='right')
         self.undo_button = ttk.Button(row, text='Undo', command=lambda: self.restore_history(True), state='disabled')
         self.undo_button.pack(side='right', padx=5)
-        ttk.Label(frame, textvariable=self.source_label, wraplength=820).pack(anchor='w', pady=10)
-        self.canvas = tk.Canvas(frame, height=140, background='#10233f', highlightthickness=0)
+        ttk.Label(frame, textvariable=self.source_label, wraplength=820,
+                  style='Card.TLabel', padding=(14,12)).pack(fill='x', pady=12)
+        self.canvas = tk.Canvas(frame, height=200, background='#061727', highlightthickness=1,
+                                highlightbackground='#244b68')
         self.canvas.pack(fill='x')
         self.canvas.bind('<Configure>', lambda _: self.draw())
         self.canvas.bind('<Button-1>', self.drag_start)
@@ -64,7 +66,7 @@ class EditorPanel:
         self.canvas.bind('<Shift-Button-1>', self.seek_waveform)
         playback_row = ttk.Frame(frame)
         playback_row.pack(fill='x', pady=4)
-        self.play_button = ttk.Button(playback_row, text='Play source', command=self.play_source)
+        self.play_button = ttk.Button(playback_row, text='▶  Play source', command=self.play_source, style='Primary.TButton')
         self.play_button.pack(side='left')
         self.pause_button = ttk.Button(playback_row, text='Pause', command=self.pause_playback)
         self.pause_button.pack(side='left', padx=5)
@@ -73,19 +75,24 @@ class EditorPanel:
         ttk.Button(playback_row, text='Set end here', command=lambda: self.set_boundary(False)).pack(side='left')
         ttk.Label(playback_row, textvariable=self.playback_label).pack(side='right')
         ttk.Label(frame, textvariable=self.selection_label).pack(anchor='w', pady=3)
-        settings = ttk.LabelFrame(frame, text='Selection and finishing', padding=10)
-        settings.pack(fill='x', pady=8)
+        settings_row = ttk.Frame(frame)
+        settings_row.pack(fill='x', pady=8)
+        settings = ttk.LabelFrame(settings_row, text='Selection', padding=14)
+        settings.pack(side='left', fill='both', expand=True, padx=(0,10))
+        finishing = ttk.LabelFrame(settings_row, text='Volume & fades', padding=14)
+        finishing.pack(side='left', fill='both', expand=True)
         for index, (title, variable) in enumerate((('Start (seconds)', self.start_time), ('End (seconds)', self.end_time), ('Fade in (seconds)', self.fade_in), ('Fade out (seconds)', self.fade_out))):
-            column = (index % 2) * 2
-            ttk.Label(settings, text=title).grid(row=index // 2, column=column, sticky='w', padx=(0, 8), pady=4)
-            entry = ttk.Entry(settings, textvariable=variable, width=12)
-            entry.grid(row=index // 2, column=column + 1, sticky='w', padx=(0, 20))
+            host = settings if index < 2 else finishing
+            ttk.Label(host, text=title).grid(row=index % 2, column=0, sticky='w', padx=(0, 8), pady=7)
+            entry = ttk.Entry(host, textvariable=variable, width=12)
+            entry.grid(row=index % 2, column=1, sticky='ew')
             self.controls.append(entry)
             entry.bind('<FocusOut>', lambda _: self.flush_history())
         self.volume_label = tk.StringVar()
-        ttk.Label(settings, textvariable=self.volume_label).grid(row=2, column=0, sticky='w', pady=6)
-        volume = ttk.Scale(settings, from_=0, to=2, variable=self.gain)
-        volume.grid(row=2, column=1, columnspan=3, sticky='ew')
+        ttk.Label(finishing, textvariable=self.volume_label).grid(row=2, column=0, sticky='w', pady=6)
+        volume = ttk.Scale(finishing, from_=0, to=2, variable=self.gain)
+        volume.grid(row=2, column=1, sticky='ew')
+        finishing.columnconfigure(1, weight=1)
         self.controls.append(volume)
         volume.bind('<ButtonPress-1>', lambda _: self.begin_history_gesture())
         volume.bind('<ButtonRelease-1>', lambda _: self.end_history_gesture())
@@ -248,7 +255,7 @@ class EditorPanel:
         self.canvas.delete('playhead')
         if self.info:
             x = self.canvas.winfo_width() * self.playhead_time / self.info['duration']
-            self.canvas.create_line(x, 0, x, self.canvas.winfo_height(), fill='#ffcc66', width=2, tags='playhead')
+            self.canvas.create_line(x, 0, x, self.canvas.winfo_height()-24, fill='#ffffff', width=2, tags='playhead')
         self.playback_label.set(f'Playhead: {self.playhead_time:.3f}s')
         self.pause_button.configure(text='Pause' if self.playback.playing else 'Resume')
         self.pause_button.configure(state='normal' if self.playback.path and not self.occupied() else 'disabled')
@@ -347,10 +354,17 @@ class EditorPanel:
             return
         width, height = self.canvas.winfo_width(), self.canvas.winfo_height()
         duration = self.info['duration']
+        for tick in range(9):
+            x = width * tick / 8
+            self.canvas.create_line(x, 0, x, height-24, fill='#102b43')
         try:
             start, end = float(self.start_time.get()), float(self.end_time.get())
             if 0 <= start < end <= duration + .000001:
                 self.canvas.create_rectangle(width * start / duration, 0, width * end / duration, height, fill='#204b79', outline='')
+                for boundary in (start,end):
+                    x = width * boundary / duration
+                    self.canvas.create_line(x,0,x,height-24,fill='#24baff',width=2)
+                    self.canvas.create_rectangle(x-3,2,x+3,13,fill='#24baff',outline='')
                 self.selection_label.set(f'Selected: {start:.3f}s to {end:.3f}s | duration {end-start:.3f}s')
             else:
                 self.selection_label.set('Enter a valid selection within the audio duration.')
@@ -359,10 +373,13 @@ class EditorPanel:
         peaks = self.info['peaks']
         for index, (low, high) in enumerate(peaks):
             x = (index + .5) * width / len(peaks)
-            self.canvas.create_line(x, height/2-low*height*.44, x, height/2-high*height*.44, fill='#51dbef')
+            self.canvas.create_line(x, (height-24)/2-low*(height-24)*.44, x, (height-24)/2-high*(height-24)*.44, fill='#16bbff')
         self.canvas.create_line(0, height/2, width, height/2, fill='#6683a3')
-        self.canvas.create_text(8, height-12, anchor='w', text='0.00s', fill='#c4d8f1')
-        self.canvas.create_text(width-8, height-12, anchor='e', text=f'{duration:.2f}s', fill='#c4d8f1')
+        for tick in range(9):
+            seconds = duration*tick/8
+            self.canvas.create_text(max(8,min(width-8,width*tick/8)), height-12,
+                anchor='w' if tick==0 else 'e' if tick==8 else 'center',
+                text=f'{int(seconds)//60:02}:{int(seconds)%60:02}', fill='#9dbdd6', font=('Segoe UI',8))
         self.draw_playhead()
 
     def position(self, event):

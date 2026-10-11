@@ -63,9 +63,16 @@ def main():
     assert dialog.info is None and str(dialog.copy_button['state'])=='disabled'
     dialog.load(source)
     wait()
+    assert len(dialog.detail_values)==9
+    assert dialog.detail_values['Sample rate'].get()=='24,000 Hz'
+    assert dialog.detail_values['Full path'].get()==str(source.resolve())
     for widget in (dialog.choose_button,dialog.combo,dialog.copy_button):
         assert widget.winfo_ismapped()
         assert widget.winfo_rooty()+widget.winfo_height()<=dialog.winfo_rooty()+dialog.winfo_height()
+    dialog.attributes('-topmost',True)
+    dialog.lift()
+    root.update()
+    time.sleep(.2)
     ImageGrab.grab(bbox=(dialog.winfo_rootx(),dialog.winfo_rooty(),dialog.winfo_rootx()+dialog.winfo_width(),dialog.winfo_rooty()+dialog.winfo_height())).save(DATA/'audio-info-ui-preview.png')
     dialog.destroy()
     app.close()

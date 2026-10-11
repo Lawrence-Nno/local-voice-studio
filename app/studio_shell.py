@@ -16,6 +16,7 @@ class StudioShell:
         self.notebook = ttk.Notebook(self.frame, style='Studio.TNotebook', takefocus=False)
         self.notebook.pack(side='left', fill='both', expand=True)
         self.buttons = {}
+        self.icons = {}
         self.group_headers = []
         self.scroll_pages = {}
         self.notebook.bind('<<NotebookTabChanged>>', self.changed, add='+')
@@ -32,10 +33,10 @@ class StudioShell:
                              ('EDIT & ENHANCE', ((4,'Audio editor'),(6,'Audio cleanup'),(8,'Voice effects'),(2,'Background music'))),
                              ('EXPORT & AUTOMATE', ((5,'Format converter'),(7,'Batch processing')))):
             header = ttk.Label(self.sidebar, text=title, style='SidebarGroup.TLabel', takefocus=False)
-            header.pack(fill='x', pady=(12,6))
+            header.pack(fill='x', pady=(8,4))
             self.group_headers.append(header)
             for index, name in pages:
-                button = ttk.Button(self.sidebar, text=name, style='Nav.TButton',
+                button = ttk.Button(self.sidebar, text='  '+name, image=self.nav_icon(index), compound='left', style='Nav.TButton',
                                     command=lambda index=index: self.notebook.select(index))
                 button.pack(fill='x', pady=2)
                 self.buttons[index] = button
@@ -68,6 +69,33 @@ class StudioShell:
             body.bind('<Configure>', resize, add='+')
             self.scroll_pages[page_id] = canvas
         self.changed()
+
+    def nav_icon(self, index):
+        """Small drawn line icons, retained for the lifetime of the sidebar."""
+        from PIL import Image, ImageDraw, ImageTk
+        size = round(20 * max(1,self.app.root.winfo_fpixels('1i')/96))
+        image = Image.new('RGBA',(40,40))
+        draw = ImageDraw.Draw(image)
+        color = '#b4d9f5'
+        if index in (0,4,6,8):
+            heights = (10,22,32,18,26)
+            for x,h in zip((6,13,20,27,34),heights):
+                draw.line((x,20-h/2,x,20+h/2),fill=color,width=2)
+        elif index==3:
+            draw.rounded_rectangle((14,4,26,25),radius=6,outline=color,width=2)
+            draw.arc((8,10,32,32),0,180,fill=color,width=2)
+            draw.line((20,32,20,37),fill=color,width=2)
+            draw.line((13,37,27,37),fill=color,width=2)
+        elif index==2:
+            draw.line((18,29,18,8,33,5,33,26),fill=color,width=2)
+            draw.ellipse((7,26,18,35),outline=color,width=2)
+            draw.ellipse((22,23,33,32),outline=color,width=2)
+        else:
+            draw.rounded_rectangle((9,5,31,35),radius=3,outline=color,width=2)
+            for y in (13,20,27):
+                draw.line((14,y,26,y),fill=color,width=2)
+        self.icons[index] = ImageTk.PhotoImage(image.resize((size,size)),master=self.app.root)
+        return self.icons[index]
 
     def changed(self, _event=None):
         if not self.notebook.tabs():
