@@ -12,8 +12,12 @@ BUILTINS={
 
 
 def validate_settings(settings):
-    if not isinstance(settings,dict) or set(settings) not in ({'speed','pitch','reverb','radio'},{'speed','pitch','reverb','radio','formant'}):
+    required={'speed','pitch','reverb','radio'}
+    timing={'time_mode','target_duration','end_speed'}
+    if not isinstance(settings,dict) or not required<=set(settings) or set(settings)-required-{'formant'}-timing:
         raise ValueError('A preset must contain speed, pitch, reverb and radio settings.')
+    if set(settings)&timing and not timing<=set(settings):
+        raise ValueError('A timed preset must include mode, final duration and ending speed.')
     for key,low,high in (('speed',.5,2),('pitch',-12,12),('reverb',0,1)):
         value=settings[key]
         if isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value) or not low<=value<=high:
@@ -22,6 +26,14 @@ def validate_settings(settings):
         raise ValueError('Radio setting must be true or false.')
     if 'formant' in settings and not isinstance(settings['formant'],bool):
         raise ValueError('Vocal character preservation must be true or false.')
+    if 'time_mode' in settings:
+        from .effect_timing import MODES
+        if settings['time_mode'] not in MODES:
+            raise ValueError('Invalid speed mode in preset.')
+        for key,low,high in (('target_duration',.000001,1200.6),('end_speed',.5,2)):
+            value=settings[key]
+            if isinstance(value,bool) or not isinstance(value,(int,float)) or not math.isfinite(value) or not low<=value<=high:
+                raise ValueError('Invalid '+key+' setting in preset.')
     return dict(settings)
 
 

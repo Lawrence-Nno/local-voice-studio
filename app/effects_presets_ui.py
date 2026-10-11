@@ -33,7 +33,7 @@ class PresetsDialog(tk.Toplevel):
         label=ttk.Label(frame,textvariable=self.status,wraplength=700)
         label.pack(fill='x',pady=8)
         label.bind('<Configure>',lambda e:label.configure(wraplength=max(100,e.width)))
-        ttk.Label(frame,text='Loading changes speed, pitch, vocal character preservation, reverb and radio controls. Click Apply voice effects afterward.\nUpdate selected replaces that saved preset with your current controls; Delete selected removes it.',wraplength=700).pack(anchor='w',pady=8)
+        ttk.Label(frame,text='Loading restores speed mode, timing, pitch, vocal character preservation, reverb and radio controls. Click Apply voice effects afterward.\nUpdate selected replaces that saved preset with your current controls; Delete selected removes it.',wraplength=700).pack(anchor='w',pady=8)
         self.refresh()
         if panel.preset_error:
             self.status.set('Saved presets could not be loaded: '+panel.preset_error+' Starter presets are available; restore the saved file before saving.')
@@ -65,13 +65,18 @@ class PresetsDialog(tk.Toplevel):
 
     def current_settings(self):
         panel=self.panel
-        return dict(speed=panel.speed.get(),pitch=panel.pitch.get(),reverb=panel.reverb.get(),radio=panel.radio.get(),formant=panel.formant.get())
+        return dict(speed=panel.speed.get(),pitch=panel.pitch.get(),reverb=panel.reverb.get(),radio=panel.radio.get(),formant=panel.formant.get(),
+                    time_mode=panel.time_mode.get(),target_duration=float(panel.target_duration.get()) if panel.time_mode.get()=='Fit duration' else 10,
+                    end_speed=float(panel.end_speed.get()) if panel.time_mode.get()=='Gradual speed' else 1)
 
     def load(self):
         name=self.selected()
         if name and not self.panel.app.editor_panel.occupied():
             settings=self.presets[name]
             self.panel.formant.set(settings.get('formant',True))
+            self.panel.time_mode.set(settings.get('time_mode','Constant speed'))
+            self.panel.target_duration.set(str(settings.get('target_duration',10)))
+            self.panel.end_speed.set(str(settings.get('end_speed',1)))
             for key,value in settings.items():
                 getattr(self.panel,key).set(value)
             self.status.set('Loaded '+name+'. Click Apply voice effects to process audio.')

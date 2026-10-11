@@ -8,7 +8,7 @@ from .storage import ROOT
 DIRECTORY = ROOT/'tools/rubberband/rubberband-4.0.0-gpl-executable-windows'
 
 
-def transform(audio, rate, speed, pitch, formant=True, work_directory=None):
+def transform(audio, rate, speed, pitch, formant=True, work_directory=None, time_map=None, output_frames=None):
     executable=DIRECTORY/'rubberband.exe'
     if not executable.is_file():
         raise ValueError('Rubber Band is missing. Run scripts/download_rubberband.py to install the official audio utility.')
@@ -23,6 +23,10 @@ def transform(audio, rate, speed, pitch, formant=True, work_directory=None):
         output=Path(folder)/'output.wav'
         sf.write(source,audio,rate,subtype='FLOAT')
         command=[str(executable),'--fine','--quiet','--tempo',str(speed),'--pitch',str(pitch)]
+        if time_map:
+            mapping=Path(folder)/'time-map.txt'
+            mapping.write_text(''.join(f'{source_frame} {target_frame}\n' for source_frame,target_frame in time_map),encoding='ascii')
+            command.extend(['--timemap',str(mapping)])
         if formant and pitch!=0:
             command.append('--formant')
         if audio.shape[1]==2:
@@ -34,4 +38,12 @@ def transform(audio, rate, speed, pitch, formant=True, work_directory=None):
         processed,output_rate=sf.read(output,dtype='float32',always_2d=True)
         if output_rate!=rate or processed.shape[1]!=audio.shape[1]:
             raise ValueError('Rubber Band returned an inconsistent audio format.')
+        if output_frames is not None:
+            # Offline output should be exact; tolerate only sample-rounding differences.
+            if abs(len(processed)-output_frames)>2:
+                raise ValueError('Rubber Band returned an unexpected output duration.')
+            import numpy as np
+            processed=processed[:output_frames]
+            if len(processed)<output_frames:
+                processed=np.pad(processed,((0,output_frames-len(processed)),(0,0)))
         return processed

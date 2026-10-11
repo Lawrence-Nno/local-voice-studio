@@ -10,12 +10,13 @@ def main():
         raise ValueError('Build the portable app first.')
     shutil.copytree(ROOT/'app',target/'app',dirs_exist_ok=True,ignore=ignore)
     shutil.copytree(ROOT/'tools/rubberband',target/'tools/rubberband',dirs_exist_ok=True)
-    for name in ('check_effects.py','check_rubberband.py'):
+    for name in ('check_effects.py','check_rubberband.py','check_effect_timing.py'):
         shutil.copy2(ROOT/'scripts'/name,target/'scripts'/name)
     shutil.copy2(ROOT/'README.md',target/'README.md')
     manifest=target/'portable-build.json'
     value=json.loads(manifest.read_text())
-    value['effects_engine']={'name':'Rubber Band','version':'4.0.0','engine':'R3 Finer','formant_preservation':True,'verified':'2026-10-11'}
+    value['effects_engine']={'name':'Rubber Band','version':'4.0.0','engine':'R3 Finer','formant_preservation':True,
+                             'target_duration':True,'gradual_speed':True,'verified':'2026-10-11'}
     manifest.write_text(json.dumps(value,indent=2),encoding='utf-8')
     print('Portable Rubber Band R3 updated; licenses retained and user data preserved.')
 

@@ -4,7 +4,8 @@ import sys
 from pathlib import Path
 
 
-def process(source,destination,original,speed=1,pitch=0,reverb=0,radio=False,formant=True):
+def process(source,destination,original,speed=1,pitch=0,reverb=0,radio=False,formant=True,
+            time_mode='Constant speed',target_duration=10,end_speed=1):
     import av
     import numpy as np
     import soundfile as sf
@@ -40,11 +41,15 @@ def process(source,destination,original,speed=1,pitch=0,reverb=0,radio=False,for
         if not 0<frames<=600*rate:
             raise ValueError('Use a non-empty clip up to ten minutes long.')
         audio,_=sf.read(original,dtype='float32',always_2d=True)
-        result,gain=apply_effects(audio,rate,speed,pitch,reverb,radio,formant,destination.with_suffix('.rubberband-work'))
+        from .effect_timing import timing_plan
+        effective_speed,_,_=timing_plan(len(audio),rate,speed,time_mode,target_duration,end_speed,reverb)
+        result,gain=apply_effects(audio,rate,speed,pitch,reverb,radio,formant,destination.with_suffix('.rubberband-work'),
+                                  time_mode,target_duration,end_speed)
         sf.write(destination,result,rate,subtype='PCM_16')
         return {'format':'Voice effects WAV','rate':rate,'channels':channels,'duration':len(result)/rate,'bytes':destination.stat().st_size,
                 'original':str(original),'peak_protection':gain<1,'speed':speed,'pitch':pitch,'reverb':reverb,'radio':radio,
-                'formant':formant,'engine':'Rubber Band 4.0 R3 Finer' if speed!=1 or pitch!=0 else 'Unchanged speed/pitch'}
+                'formant':formant,'engine':'Rubber Band 4.0 R3 Finer' if time_mode!='Constant speed' or speed!=1 or pitch!=0 else 'Unchanged speed/pitch',
+                'time_mode':time_mode,'target_duration':target_duration,'end_speed':end_speed,'effective_speed':effective_speed}
     except Exception:
         destination.unlink(missing_ok=True)
         original.unlink(missing_ok=True)

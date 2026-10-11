@@ -2,7 +2,8 @@
 import math
 
 
-def apply_effects(audio,rate,speed=1,pitch=0,reverb=0,radio=False,formant=True,work_directory=None):
+def apply_effects(audio,rate,speed=1,pitch=0,reverb=0,radio=False,formant=True,work_directory=None,
+                  time_mode='Constant speed',target_duration=10,end_speed=1):
     import numpy as np
     from scipy import signal
     audio=np.asarray(audio,dtype=np.float32)
@@ -12,10 +13,12 @@ def apply_effects(audio,rate,speed=1,pitch=0,reverb=0,radio=False,formant=True,w
         raise ValueError('Speed must be 0.5-2x, pitch -12 to +12 semitones, and reverb 0-100%.')
     if not isinstance(formant,bool):
         raise ValueError('Preserve vocal character must be true or false.')
+    from .effect_timing import timing_plan
+    effective_speed,expected_frames,time_map=timing_plan(len(audio),rate,speed,time_mode,target_duration,end_speed,reverb)
     result=audio.copy()
-    if speed!=1 or pitch!=0:
+    if effective_speed!=1 or pitch!=0 or time_map:
         from .rubberband import transform
-        result=transform(result,rate,speed,pitch,formant,work_directory)
+        result=transform(result,rate,effective_speed,pitch,formant,work_directory,time_map,expected_frames)
     if not len(result) or not np.isfinite(result).all():
         raise ValueError('Rubber Band returned invalid audio.')
     if radio:
