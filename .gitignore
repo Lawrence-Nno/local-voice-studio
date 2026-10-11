@@ -41,6 +41,7 @@ data/
 # Build artifacts and operating-system files
 build/
 dist/
+tools/rubberband/
 Thumbs.db
 Desktop.ini
 .DS_Store

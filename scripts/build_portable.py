@@ -22,7 +22,11 @@ def main():
     base = ROOT / ".python" / "cpython-3.11-windows-x86_64-none"
     if shutil.disk_usage(ROOT).free < 20 * 1024**3:
         raise ValueError("Allow 20 GiB free for the two-model portable folder.")
+    rubberband=ROOT/'tools/rubberband'
+    if not (rubberband/'rubberband-4.0.0-gpl-executable-windows/rubberband.exe').is_file():
+        raise ValueError('Install Rubber Band with scripts/download_rubberband.py before packaging.')
     target.mkdir(parents=True)
+    shutil.copytree(rubberband,target/'tools/rubberband')
     for name, environment in (("turbo", ".venv"), ("qwen", ".venv-qwen")):
         print("Bundling " + name + " runtime and libraries", flush=True)
         runtime = target / "runtime" / name
@@ -32,7 +36,7 @@ def main():
     print("Bundling app and model weights", flush=True)
     shutil.copytree(ROOT / "app", target / "app", ignore=ignore)
     (target / "scripts").mkdir()
-    for name in ("__init__.py", "check_qwen.py", "check_subtitles.py", "check_music.py", "check_recorder.py", "check_editor.py", "check_recording_subtitles.py", "check_converter.py", "check_cleanup.py", "check_join.py", "check_batch.py", "check_effects.py", "check_audio_info.py", "check_countdown.py", "check_effects_presets.py", "check_audio_shortcuts.py", "check_pronunciation.py", "check_playhead.py", "check_editor_history.py", "check_studio_ui.py"):
+    for name in ("__init__.py", "check_qwen.py", "check_subtitles.py", "check_music.py", "check_recorder.py", "check_editor.py", "check_recording_subtitles.py", "check_converter.py", "check_cleanup.py", "check_join.py", "check_batch.py", "check_effects.py", "check_audio_info.py", "check_countdown.py", "check_effects_presets.py", "check_audio_shortcuts.py", "check_pronunciation.py", "check_playhead.py", "check_editor_history.py", "check_studio_ui.py", "check_rubberband.py"):
         source = ROOT / "scripts" / name
         if source.exists():
             shutil.copy2(source, target / "scripts" / name)

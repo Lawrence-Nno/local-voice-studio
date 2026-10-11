@@ -12,7 +12,7 @@ BUILTINS={
 
 
 def validate_settings(settings):
-    if not isinstance(settings,dict) or set(settings)!={'speed','pitch','reverb','radio'}:
+    if not isinstance(settings,dict) or set(settings) not in ({'speed','pitch','reverb','radio'},{'speed','pitch','reverb','radio','formant'}):
         raise ValueError('A preset must contain speed, pitch, reverb and radio settings.')
     for key,low,high in (('speed',.5,2),('pitch',-12,12),('reverb',0,1)):
         value=settings[key]
@@ -20,6 +20,8 @@ def validate_settings(settings):
             raise ValueError('Invalid '+key+' setting in preset.')
     if not isinstance(settings['radio'],bool):
         raise ValueError('Radio setting must be true or false.')
+    if 'formant' in settings and not isinstance(settings['formant'],bool):
+        raise ValueError('Vocal character preservation must be true or false.')
     return dict(settings)
 
 

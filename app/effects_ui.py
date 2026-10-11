@@ -24,6 +24,7 @@ class EffectsPanel(ConverterPanel):
         self.pitch=tk.DoubleVar(value=0)
         self.reverb=tk.DoubleVar(value=0)
         self.radio=tk.BooleanVar(value=False)
+        self.formant=tk.BooleanVar(value=True)
         self.preset_dialog=None
         self.preset_error=None
         try:
@@ -65,6 +66,9 @@ class EffectsPanel(ConverterPanel):
         check=ttk.Checkbutton(settings,text='Radio-style voice (narrow frequency range and mild saturation)',variable=self.radio)
         check.pack(anchor='w',pady=4)
         self.controls.append(check)
+        check=ttk.Checkbutton(settings,text='Preserve vocal character when changing pitch (reduces the chipmunk effect)',variable=self.formant)
+        check.pack(anchor='w',pady=4)
+        self.controls.append(check)
         preset_row=ttk.Frame(settings)
         preset_row.pack(fill='x',pady=4)
         button=ttk.Button(preset_row,text='Reset effects',command=self.reset)
@@ -73,7 +77,7 @@ class EffectsPanel(ConverterPanel):
         self.presets_button=ttk.Button(preset_row,text='Effects presets...',command=self.open_presets)
         self.presets_button.pack(side='left',padx=8)
         self.controls.append(self.presets_button)
-        ttk.Label(frame,text='Speed and pitch work independently. Reverb adds a 0.6-second tail.\nSpeed changes or reverb require new subtitle timings. Extreme settings may sound less natural.\nUse clips up to ten minutes. Mono/stereo is retained; rates above 48 kHz are converted to 48 kHz.',wraplength=820).pack(anchor='w',pady=8)
+        ttk.Label(frame,text='Rubber Band R3 Finer processes speed and pitch together. Vocal character preservation affects pitch changes only.\nReverb adds a 0.6-second tail. Speed changes or reverb require new subtitle timings.\nUse clips up to ten minutes. Mono/stereo is retained; rates above 48 kHz become 48 kHz.',wraplength=820).pack(anchor='w',pady=8)
         row=ttk.Frame(frame)
         row.pack(fill='x',pady=8)
         self.convert_button=ttk.Button(row,text='Apply voice effects',style='Primary.TButton',command=self.start)
@@ -112,10 +116,11 @@ class EffectsPanel(ConverterPanel):
         self.pitch.set(0)
         self.reverb.set(0)
         self.radio.set(False)
+        self.formant.set(True)
 
     def make_request(self,source,temporary,format_name):
         return {'source':str(source),'destination':str(temporary),'original':str(temporary.with_name(temporary.stem+'-original.wav')),
-                'speed':self.speed.get(),'pitch':self.pitch.get(),'reverb':self.reverb.get(),'radio':self.radio.get()}
+                'speed':self.speed.get(),'pitch':self.pitch.get(),'reverb':self.reverb.get(),'radio':self.radio.get(),'formant':self.formant.get()}
 
     def completion_status(self,info):
         return f"Effects complete: {info['duration']:.2f}s | {info['rate']} Hz | {info['channels']} channel(s). Compare and export." + (' Peak protection reduced the level.' if info['peak_protection'] else '')

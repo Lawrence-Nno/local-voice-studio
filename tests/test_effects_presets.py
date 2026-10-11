@@ -7,6 +7,16 @@ from app.effects_presets import EffectsPresets,BUILTINS
 
 
 class PresetsTests(unittest.TestCase):
+    def test_formant_option_and_legacy_presets(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path=Path(directory)/'presets.json'
+            store=EffectsPresets(path)
+            store.save('Legacy',BUILTINS['Normal voice'])
+            settings=dict(BUILTINS['Normal voice'],formant=False)
+            store.save('Altered character',settings)
+            loaded=EffectsPresets(path)
+            self.assertEqual(loaded.custom['Altered character'],settings)
+            self.assertNotIn('formant',loaded.custom['Legacy'])
     def test_save_reload_update_delete(self):
         with tempfile.TemporaryDirectory() as directory:
             path=Path(directory)/'presets.json'

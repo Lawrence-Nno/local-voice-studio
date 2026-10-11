@@ -33,7 +33,7 @@ class PresetsDialog(tk.Toplevel):
         label=ttk.Label(frame,textvariable=self.status,wraplength=700)
         label.pack(fill='x',pady=8)
         label.bind('<Configure>',lambda e:label.configure(wraplength=max(100,e.width)))
-        ttk.Label(frame,text='Loading changes speed, pitch, reverb and radio controls only. Click Apply voice effects afterward.\nUpdate selected replaces that saved preset with your current controls; Delete selected removes it.',wraplength=700).pack(anchor='w',pady=8)
+        ttk.Label(frame,text='Loading changes speed, pitch, vocal character preservation, reverb and radio controls. Click Apply voice effects afterward.\nUpdate selected replaces that saved preset with your current controls; Delete selected removes it.',wraplength=700).pack(anchor='w',pady=8)
         self.refresh()
         if panel.preset_error:
             self.status.set('Saved presets could not be loaded: '+panel.preset_error+' Starter presets are available; restore the saved file before saving.')
@@ -65,12 +65,13 @@ class PresetsDialog(tk.Toplevel):
 
     def current_settings(self):
         panel=self.panel
-        return dict(speed=panel.speed.get(),pitch=panel.pitch.get(),reverb=panel.reverb.get(),radio=panel.radio.get())
+        return dict(speed=panel.speed.get(),pitch=panel.pitch.get(),reverb=panel.reverb.get(),radio=panel.radio.get(),formant=panel.formant.get())
 
     def load(self):
         name=self.selected()
         if name and not self.panel.app.editor_panel.occupied():
             settings=self.presets[name]
+            self.panel.formant.set(settings.get('formant',True))
             for key,value in settings.items():
                 getattr(self.panel,key).set(value)
             self.status.set('Loaded '+name+'. Click Apply voice effects to process audio.')

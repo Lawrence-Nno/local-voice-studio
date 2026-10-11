@@ -13,4 +13,6 @@ uv pip check --python .venv-qwen\Scripts\python.exe
 if ($LASTEXITCODE -ne 0) { throw 'Qwen dependency validation failed.' }
 & .venv-qwen\Scripts\python.exe -m scripts.download_qwen
 if ($LASTEXITCODE -ne 0) { throw 'Qwen download failed. Rerun to resume.' }
-Write-Host 'Qwen is installed. Launch the app and select Qwen3-TTS 1.7B Base.'
+& .venv-qwen\Scripts\python.exe -m scripts.download_rubberband
+if ($LASTEXITCODE -ne 0) { throw 'Rubber Band download failed. Rerun setup.' }
+Write-Host 'Qwen and Rubber Band are installed. Launch the app and select Qwen3-TTS 1.7B Base.'

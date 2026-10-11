@@ -2,7 +2,7 @@
 import math
 
 
-def apply_effects(audio,rate,speed=1,pitch=0,reverb=0,radio=False):
+def apply_effects(audio,rate,speed=1,pitch=0,reverb=0,radio=False,formant=True,work_directory=None):
     import numpy as np
     from scipy import signal
     audio=np.asarray(audio,dtype=np.float32)
@@ -10,14 +10,14 @@ def apply_effects(audio,rate,speed=1,pitch=0,reverb=0,radio=False):
         raise ValueError('Use finite mono/stereo audio.')
     if not all(math.isfinite(x) for x in (speed,pitch,reverb)) or not .5<=speed<=2 or not -12<=pitch<=12 or not 0<=reverb<=1:
         raise ValueError('Speed must be 0.5-2x, pitch -12 to +12 semitones, and reverb 0-100%.')
-    result=audio.T.copy()
+    if not isinstance(formant,bool):
+        raise ValueError('Preserve vocal character must be true or false.')
+    result=audio.copy()
     if speed!=1 or pitch!=0:
-        import librosa
-        if speed!=1:
-            result=librosa.effects.time_stretch(result,rate=speed)
-        if pitch!=0:
-            result=librosa.effects.pitch_shift(result,sr=rate,n_steps=pitch)
-    result=result.T
+        from .rubberband import transform
+        result=transform(result,rate,speed,pitch,formant,work_directory)
+    if not len(result) or not np.isfinite(result).all():
+        raise ValueError('Rubber Band returned invalid audio.')
     if radio:
         sos=signal.butter(3,(300,min(3400,rate*.4)),fs=rate,btype='bandpass',output='sos')
         result=signal.sosfilt(sos,result,axis=0)

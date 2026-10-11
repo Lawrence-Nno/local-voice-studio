@@ -143,7 +143,12 @@ class ConverterPanel:
                 payload = json.dumps(request)+'\n'
                 while True:
                     if self.cancel.is_set():
-                        process.terminate()
+                        if self.worker_module=='app.effects_worker':
+                            subprocess.run(['taskkill','/PID',str(process.pid),'/T','/F'],capture_output=True,creationflags=subprocess.CREATE_NO_WINDOW)
+                            if process.poll() is None:
+                                process.terminate()
+                        else:
+                            process.terminate()
                         process.communicate()
                         self.events.put(('cancelled',None))
                         return
@@ -164,10 +169,17 @@ class ConverterPanel:
                 self.events.put(('error',str(exc)))
             finally:
                 if process and process.poll() is None:
-                    process.terminate()
+                    if self.worker_module=='app.effects_worker':
+                        subprocess.run(['taskkill','/PID',str(process.pid),'/T','/F'],capture_output=True,creationflags=subprocess.CREATE_NO_WINDOW)
+                        if process.poll() is None:
+                            process.terminate()
+                    else:
+                        process.terminate()
                     process.communicate()
                 self.process = None
                 temporary.unlink(missing_ok=True)
+                if self.worker_module=='app.effects_worker':
+                    shutil.rmtree(temporary.with_suffix('.rubberband-work'),ignore_errors=True)
                 if self.cancel.is_set() and request.get('original'):
                     Path(request['original']).unlink(missing_ok=True)
                     temporary.with_suffix('.processing.wav').unlink(missing_ok=True)
